@@ -1,0 +1,34 @@
+schema: spec-driven
+
+# Project context
+context: |
+  Proyecto: Agendame - Sistema web de gestión de turnos online multi-prestador para servicios (peluquerías).
+  Stack: React + Vite (Frontend), Python + FastAPI (Backend), SQLite + SQLAlchemy, Arquitectura Controllers/Services/Repositories.
+  Chatbot/IA: LangChain + Groq API para consulta de disponibilidad y agendamiento por lenguaje natural.
+  Entorno IA asistido: OpenCode + OpenSpec (SDD) + AGENTS.md + SKILL.md.
+  Servidores MCP: Filesystem (local) y GitHub (externo).
+  Roles: Cliente, Proveedor (Peluquero), Administrador.
+  10 Casos de Uso definidos (CU-01 a CU-10).
+  Escribir todos los artifacts en español.
+
+# Per-artifact rules
+rules:
+  proposal:
+    - Keep proposals under 500 words
+    - Always state what is out of scope
+    - Write in Spanish
+  tasks:
+    - Break tasks into chunks of max 2 hours
+    - Write in Spanish
+
+# Per-operation guidance
+operations:
+  apply:
+    guidance:
+      - Keep test summaries concise
+      - Follow the Controllers/Services/Repositories architecture
+      - Use SQLAlchemy models with proper relationships
+  archive:
+    guidance:
+      - Summarize the archive outcome before finishing
+      - Write in Spanish
