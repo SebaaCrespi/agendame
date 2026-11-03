@@ -1,6 +1,6 @@
-# Especificación de Dominio: Profesionales y Servicios (CU-02, CU-10)
+# Especificación de Dominio: Profesionales y Servicios (CU-02, CU-03, CU-10)
 
-## Resumen
+## Purpose
 
 Gestión de profesionales (proveedores/peluqueros), sus servicios ofrecidos y configuración de disponibilidad horaria. Cada profesional tiene su grilla aislada e independiente.
 
@@ -154,3 +154,25 @@ class ExcepcionDisponibilidad(Base):
 5. GET `/profesionales/1/slots?desde=2026-10-15&hasta=2026-10-21` retorna slots libres
 6. Slots excluyen turnos ya reservados y excepciones
 7. Profesional A no ve servicios/grilla/turnos del Profesional B
+
+## Requirements
+
+<!-- Agregados por el change cu-04-reserva-manual (CU-04) -->
+
+### Requirement: Listado público de profesionales con servicios
+El listado público de profesionales SHALL devolver una lista paginada con solo los profesionales activos. Cada profesional SHALL incluir id, nombre, apellido, bio, foto, duración de slot y sus servicios activos (id, nombre, descripción, duración en minutos y precio en centavos).
+
+#### Scenario: Listado con servicios
+- **WHEN** un cliente autenticado consulta el listado y hay un profesional activo con dos servicios activos y uno inactivo
+- **THEN** la respuesta incluye a ese profesional con sus dos servicios activos
+
+#### Scenario: Profesional inactivo
+- **WHEN** existe un profesional inactivo
+- **THEN** no aparece en el listado público
+
+### Requirement: Listado público sin datos privados
+El listado público y el detalle público de un profesional SHALL NOT exponer su email ni el id de su usuario.
+
+#### Scenario: Sin email
+- **WHEN** un cliente consulta el listado público
+- **THEN** ningún profesional de la respuesta tiene los campos email ni user_id

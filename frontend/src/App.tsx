@@ -1,0 +1,110 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { Layout } from '@/components/layout/Layout';
+import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
+import { LoginPage } from '@/pages/auth/LoginPage';
+import { RegisterPage } from '@/pages/auth/RegisterPage';
+import { ClienteDashboard } from '@/pages/cliente/DashboardPage';
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <RegisterPage />
+          </PublicRoute>
+        }
+      />
+
+      {/* Protected routes - Cliente */}
+      <Route
+        path="/cliente/*"
+        element={
+          <ProtectedRoute allowedRoles={['CLIENTE']}>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/cliente/dashboard" replace />} />
+        <Route path="dashboard" element={<ClienteDashboard />} />
+        <Route path="reservar" element={<ClienteDashboard />} />
+        <Route path="mis-turnos" element={<ClienteDashboard />} />
+      </Route>
+
+      {/* Protected routes - Profesional */}
+      <Route
+        path="/profesional/*"
+        element={
+          <ProtectedRoute allowedRoles={['PROVEEDOR']}>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/profesional/dashboard" replace />} />
+        <Route path="dashboard" element={<div>Profesional Dashboard - Próximamente</div>} />
+        <Route path="turnos" element={<div>Mis Turnos - Próximamente</div>} />
+        <Route path="perfil" element={<div>Mi Perfil - Próximamente</div>} />
+        <Route path="servicios" element={<div>Servicios - Próximamente</div>} />
+        <Route path="disponibilidad" element={<div>Disponibilidad - Próximamente</div>} />
+      </Route>
+
+      {/* Protected routes - Admin */}
+      <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="dashboard" element={<div>Admin Dashboard - Próximamente</div>} />
+        <Route path="turnos" element={<div>Todos los Turnos - Próximamente</div>} />
+        <Route path="profesionales" element={<div>Profesionales - Próximamente</div>} />
+      </Route>
+
+      {/* Default redirect */}
+      <Route path="/" element={<Navigate to="/cliente/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/cliente/dashboard" replace />} />
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
