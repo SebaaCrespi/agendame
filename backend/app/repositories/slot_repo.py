@@ -28,6 +28,7 @@ class SlotRepo:
         desde: date,
         hasta: date,
         duracion_min: int | None = None,
+        excluir_turno_id: int | None = None,
     ) -> list[dict[str, object]]:
         """
         Core algorithm: Generate available slots for a profesional in date range.
@@ -55,7 +56,7 @@ class SlotRepo:
         excepciones = await self._get_excepciones_in_range(profesional_id, desde, hasta)
 
         # 4. Get turnos ocupados in range
-        turnos_ocupados = await self._get_turnos_ocupados(profesional_id, desde, hasta)
+        turnos_ocupados = await self._get_turnos_ocupados(profesional_id, desde, hasta, excluir_turno_id)
 
         # 5. Generate slots
         return self._generate_slots(
@@ -90,9 +91,9 @@ class SlotRepo:
         return list(result.scalars().all())
 
     async def _get_turnos_ocupados(
-        self, profesional_id: int, desde: date, hasta: date
+        self, profesional_id: int, desde: date, hasta: date, excluir_turno_id: int | None = None
     ) -> list[Turno]:
-        """Get turnos that block slots (CONFIRMADO, PENDIENTE, EN_CURSO)."""
+        """Get turnos that block slots (CONFIRMADO, PENDIENTE, EN_CURSO), except `excluir_turno_id`."""
         # Convert dates to datetime for comparison
         desde_dt = datetime.combine(desde, time.min).replace(tzinfo=UTC)
         hasta_dt = datetime.combine(hasta, time.max).replace(tzinfo=UTC)
@@ -107,6 +108,8 @@ class SlotRepo:
             Turno.fecha_inicio >= desde_dt,
             Turno.fecha_inicio <= hasta_dt
         )
+        if excluir_turno_id is not None:
+            stmt = stmt.where(Turno.id != excluir_turno_id)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

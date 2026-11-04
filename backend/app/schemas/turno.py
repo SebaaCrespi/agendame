@@ -166,6 +166,10 @@ class TurnoResponse(BaseModel):
     actualizado_en: datetime = Field(validation_alias=AliasChoices("actualizado_en", "updated_at"))
     confirmado_en: datetime | None = None
     finalizado_en: datetime | None = None
+    # Auditoría de la última reasignación (CU-08)
+    reasignado_desde: datetime | None = None
+    motivo_reasignacion: str | None = None
+    reasignado_en: datetime | None = None
     # Datos legibles (CU-07)
     cliente_nombre: str
     cliente_telefono: str | None = None

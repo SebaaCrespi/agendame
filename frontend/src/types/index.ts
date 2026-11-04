@@ -181,6 +181,10 @@ export interface Turno {
   actualizado_en: string;
   confirmado_en: string | null;
   finalizado_en: string | null;
+  // Auditoría de la última reasignación (CU-08)
+  reasignado_desde: string | null;
+  motivo_reasignacion: string | null;
+  reasignado_en: string | null;
   // Datos legibles (CU-07)
   cliente_nombre: string;
   cliente_telefono: string | null;
@@ -239,6 +243,15 @@ export interface SlotDisponible {
   hora_inicio: string; // HH:MM:SS
   hora_fin: string; // HH:MM:SS
   disponible: boolean;
+}
+
+export interface SlotsListResponse {
+  profesional_id: number;
+  slot_duracion_min: number;
+  desde: string; // YYYY-MM-DD
+  hasta: string; // YYYY-MM-DD
+  slots: SlotDisponible[];
+  total: number;
 }
 
 export interface ProfesionalConSlots {

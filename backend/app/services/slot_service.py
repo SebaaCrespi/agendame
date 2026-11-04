@@ -23,6 +23,7 @@ class SlotService:
         desde: date,
         hasta: date,
         duracion_min: int | None = None,
+        excluir_turno_id: int | None = None,
     ) -> SlotsListResponse:
         """
         Generate available slots for a profesional in date range.
@@ -54,6 +55,7 @@ class SlotService:
             desde=desde,
             hasta=hasta,
             duracion_min=duracion_min,
+            excluir_turno_id=excluir_turno_id,
         )
 
         # Convert to response models

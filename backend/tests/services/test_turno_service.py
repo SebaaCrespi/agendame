@@ -269,16 +269,30 @@ class TestReasignarTurno:
         assert result.fecha_inicio.replace(tzinfo=UTC) == _dt(4, 15)
         assert result.fecha_fin - result.fecha_inicio == timedelta(minutes=30)
 
-    async def test_corrimiento_solapado_con_si_mismo_permitido(self, db_session, sample_turno, sample_profesional):
-        # 10:00-10:30 -> 10:15-10:45 solo se solapa con el propio turno
+    async def test_corrimiento_solapado_con_si_mismo_permitido(
+        self, db_session, make_turno, sample_cliente, sample_profesional, servicio_largo
+    ):
+        # 60 min: 10:00-11:00 -> 10:30-11:30 solo se solapa con el propio turno
+        turno = await make_turno(sample_cliente, sample_profesional, servicio_largo)
         result = await TurnoService(db_session).reasignar_turno(
-            turno_id=sample_turno.id,
+            turno_id=turno.id,
             profesional_id=sample_profesional.id,
-            nueva_fecha=sample_turno.fecha_inicio.date(),
-            nueva_hora_inicio=time(10, 15),
+            nueva_fecha=turno.fecha_inicio.date(),
+            nueva_hora_inicio=time(10, 30),
             motivo="Corrimiento",
         )
-        assert result.fecha_inicio.replace(tzinfo=UTC).time() == time(10, 15)
+        assert result.fecha_inicio.replace(tzinfo=UTC).time() == time(10, 30)
+        assert result.fecha_fin.replace(tzinfo=UTC).time() == time(11, 30)
+
+    async def test_inicio_desalineado_422(self, db_session, sample_turno, sample_profesional):
+        with pytest.raises(ValidationException):
+            await TurnoService(db_session).reasignar_turno(
+                turno_id=sample_turno.id,
+                profesional_id=sample_profesional.id,
+                nueva_fecha=sample_turno.fecha_inicio.date(),
+                nueva_hora_inicio=time(10, 15),
+                motivo="x",
+            )
 
     async def test_a_slot_ocupado_conflict(
         self, db_session, make_turno, sample_turno, sample_cliente, sample_profesional, sample_servicio
@@ -532,3 +546,145 @@ class TestMarcarAusencia:
             await TurnoService(db_session).cambiar_estado(turno.id, sample_profesional.id, TurnoEstado.NO_ASISTIO)
         await db_session.refresh(turno)
         assert turno.estado == TurnoEstado.CONFIRMADO
+
+
+class TestReasignacionCU08:
+    """CU-08: la reasignación se valida contra los slots y queda auditada."""
+
+    async def _reasignar(self, db_session, turno, profesional, dias, hora, motivo="Enfermedad"):
+        return await TurnoService(db_session).reasignar_turno(
+            turno_id=turno.id,
+            profesional_id=profesional.id,
+            nueva_fecha=proximo_dia_habil(dias),
+            nueva_hora_inicio=hora,
+            motivo=motivo,
+        )
+
+    async def test_slot_libre_libera_el_anterior_y_audita(
+        self, db_session, sample_turno, sample_profesional, sample_servicio
+    ):
+        anterior = sample_turno.fecha_inicio.replace(tzinfo=UTC)
+        result = await self._reasignar(db_session, sample_turno, sample_profesional, 4, time(15, 0))
+
+        assert result.fecha_inicio.replace(tzinfo=UTC) == _dt(4, 15)
+        assert result.reasignado_desde is not None
+        assert result.reasignado_desde.replace(tzinfo=UTC) == anterior
+        assert result.motivo_reasignacion == "Enfermedad"
+        assert result.reasignado_en is not None
+
+        dia = anterior.date()
+        disp = await TurnoService(db_session).consultar_disponibilidad(
+            profesional_id=sample_profesional.id, servicio_id=sample_servicio.id, desde=dia, hasta=dia
+        )
+        slots = {s.hora_inicio: s for s in disp.profesionales[0].slots_por_fecha[dia.isoformat()]}
+        assert slots[time(10, 0)].disponible is True
+
+    async def test_fuera_de_horario_422(self, db_session, sample_turno, sample_profesional):
+        anterior = sample_turno.fecha_inicio
+        with pytest.raises(ValidationException):
+            await self._reasignar(db_session, sample_turno, sample_profesional, 4, time(3, 0))
+        await db_session.refresh(sample_turno)
+        assert sample_turno.fecha_inicio == anterior
+        assert sample_turno.reasignado_en is None
+
+    async def test_dia_cerrado_422(self, db_session, sample_turno, sample_profesional):
+        from app.models.profesional import ExcepcionDisponibilidad, TipoExcepcion
+
+        db_session.add(
+            ExcepcionDisponibilidad(
+                profesional_id=sample_profesional.id, fecha=proximo_dia_habil(4), tipo=TipoExcepcion.CERRADO
+            )
+        )
+        await db_session.commit()
+        with pytest.raises(ValidationException):
+            await self._reasignar(db_session, sample_turno, sample_profesional, 4, time(15, 0))
+
+    async def test_al_pasado_422(self, db_session, sample_turno, sample_profesional):
+        with pytest.raises(ValidationException):
+            await self._reasignar(db_session, sample_turno, sample_profesional, -1, time(15, 0))
+
+    async def test_segunda_reasignacion_conserva_solo_la_ultima(
+        self, db_session, sample_turno, sample_profesional
+    ):
+        await self._reasignar(db_session, sample_turno, sample_profesional, 4, time(15, 0), motivo="Primera")
+        result = await self._reasignar(db_session, sample_turno, sample_profesional, 5, time(11, 0), motivo="Segunda")
+        assert result.motivo_reasignacion == "Segunda"
+        assert result.reasignado_desde is not None
+        assert result.reasignado_desde.replace(tzinfo=UTC) == _dt(4, 15)
+
+
+class TestCancelacionProfesionalCU08:
+    @pytest.fixture
+    def reloj(self, monkeypatch):
+        from app.core import timeutils
+
+        # 13:20 UTC = 10:20 en Buenos Aires
+        monkeypatch.setattr(timeutils, "_utcnow", lambda: datetime(2026, 11, 2, 13, 20, tzinfo=UTC))
+
+    async def test_turno_ya_empezado_422(
+        self, db_session, reloj, make_turno, sample_cliente, sample_profesional, sample_servicio
+    ):
+        turno = await make_turno(
+            sample_cliente, sample_profesional, sample_servicio, inicio=datetime(2026, 11, 2, 10, 0, tzinfo=UTC)
+        )
+        with pytest.raises(ValidationException):
+            await TurnoService(db_session).cancelar_turno_profesional(
+                turno_id=turno.id, profesional_id=sample_profesional.id, motivo="Corte de luz"
+            )
+
+    async def test_en_curso_se_cancela(
+        self, db_session, reloj, make_turno, sample_cliente, sample_profesional, sample_servicio
+    ):
+        turno = await make_turno(
+            sample_cliente,
+            sample_profesional,
+            sample_servicio,
+            inicio=datetime(2026, 11, 2, 10, 0, tzinfo=UTC),
+            estado=TurnoEstado.EN_CURSO,
+        )
+        result = await TurnoService(db_session).cancelar_turno_profesional(
+            turno_id=turno.id, profesional_id=sample_profesional.id, motivo="Corte de luz"
+        )
+        assert result.estado == TurnoEstado.CANCELADO_PROFESIONAL
+
+    async def test_futuro_se_cancela_y_libera_el_slot(
+        self, db_session, reloj, make_turno, sample_cliente, sample_profesional, sample_servicio
+    ):
+        turno = await make_turno(
+            sample_cliente, sample_profesional, sample_servicio, inicio=datetime(2026, 11, 3, 10, 0, tzinfo=UTC)
+        )
+        result = await TurnoService(db_session).cancelar_turno_profesional(
+            turno_id=turno.id, profesional_id=sample_profesional.id, motivo="Corte de luz"
+        )
+        assert result.estado == TurnoEstado.CANCELADO_PROFESIONAL
+        assert result.motivo_cancelacion == "Corte de luz"
+
+        dia = datetime(2026, 11, 3).date()
+        disp = await TurnoService(db_session).consultar_disponibilidad(
+            profesional_id=sample_profesional.id, servicio_id=sample_servicio.id, desde=dia, hasta=dia
+        )
+        slots = {s.hora_inicio: s for s in disp.profesionales[0].slots_por_fecha[dia.isoformat()]}
+        assert slots[time(10, 0)].disponible is True
+
+
+class TestSlotsExcluyendoTurno:
+    async def test_excluido_figura_disponible(self, db_session, sample_turno, sample_profesional, sample_servicio):
+        dia = sample_turno.fecha_inicio.date()
+        service = TurnoService(db_session)
+
+        sin_excluir = await service.obtener_slots_profesional(sample_profesional.id, dia, dia, sample_servicio.id)
+        excluyendo = await service.obtener_slots_profesional(
+            sample_profesional.id, dia, dia, sample_servicio.id, excluir_turno_id=sample_turno.id
+        )
+        a_las_10 = time(10, 0)
+        assert next(s for s in sin_excluir.slots if s.hora_inicio == a_las_10).disponible is False
+        assert next(s for s in excluyendo.slots if s.hora_inicio == a_las_10).disponible is True
+
+    async def test_servicio_ajeno_404(self, db_session, sample_profesional, make_profesional):
+        otro = await make_profesional(nombre="Otro")
+        ajeno = Servicio(profesional_id=otro.id, nombre="Ajeno", duracion_min=30, precio=1)
+        db_session.add(ajeno)
+        await db_session.commit()
+        dia = proximo_dia_habil(2)
+        with pytest.raises(NotFoundException):
+            await TurnoService(db_session).obtener_slots_profesional(sample_profesional.id, dia, dia, ajeno.id)

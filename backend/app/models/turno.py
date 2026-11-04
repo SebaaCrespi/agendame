@@ -56,6 +56,10 @@ class Turno(Base):
     creado_por: Mapped[str] = mapped_column(String(20), nullable=False)  # "cliente", "profesional", "admin", "chatbot"
     confirmado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finalizado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Auditoría de la última reasignación (CU-08)
+    reasignado_desde: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    motivo_reasignacion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reasignado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )

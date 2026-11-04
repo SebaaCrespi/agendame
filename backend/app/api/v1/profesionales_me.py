@@ -21,6 +21,7 @@ from app.schemas.profesional import (
     ServicioCreate,
     ServicioResponse,
     ServicioUpdate,
+    SlotsListResponse,
 )
 from app.schemas.turno import (
     TurnoCancelar,
@@ -272,6 +273,30 @@ async def eliminar_excepcion(
     success = await service.eliminar_excepcion(profesional.id, excepcion_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Excepción no encontrada")
+
+
+@router.get(
+    "/slots",
+    response_model=SlotsListResponse,
+    summary="Obtener mis slots",
+    description="Slots propios en un rango (máximo 60 días), opcionalmente con la duración de un servicio "
+                "propio y excluyendo un turno propio de los ocupados (para reasignarlo).",
+)
+async def obtener_mis_slots(
+    desde: date = Query(..., description="Fecha desde (inclusive)"),
+    hasta: date = Query(..., description="Fecha hasta (inclusive)"),
+    servicio_id: int | None = Query(None, ge=1, description="Servicio propio cuya duración usar"),
+    excluir_turno_id: int | None = Query(None, ge=1, description="Turno que no cuenta como ocupado"),
+    session: AsyncSession = Depends(get_db),
+    profesional: Profesional = Depends(get_mi_profesional),
+) -> SlotsListResponse:
+    """Slots del profesional autenticado (CU-08)."""
+    try:
+        return await TurnoService(session).obtener_slots_profesional(
+            profesional.id, desde, hasta, servicio_id=servicio_id, excluir_turno_id=excluir_turno_id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
 
 
 # =============================================================================

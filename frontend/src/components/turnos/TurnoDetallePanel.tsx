@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AlertCircle, Clock, Phone, Scissors, User, X } from 'lucide-react';
+import { AlertCircle, CalendarClock, Clock, Phone, Scissors, User, X, XCircle } from 'lucide-react';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
 import { formatHora, parseHoraNegocio } from '@/utils/horaNegocio';
 import { ACCION_LABEL, ESTADO_COLOR, ESTADO_LABEL, TRANSICIONES } from './estado';
+import { CancelarDialog } from './CancelarDialog';
+import { ReasignarDialog } from './ReasignarDialog';
+import { errorDetail } from './errorDetail';
 import type { Turno, TurnoEstado } from '@/types';
 
 interface TurnoDetallePanelProps {
@@ -15,21 +18,23 @@ interface TurnoDetallePanelProps {
   onUpdated: (turno: Turno) => void;
 }
 
-function errorDetail(err: unknown, fallback: string): string {
-  const e = err as { response?: { data?: { detail?: string } } };
-  return e.response?.data?.detail || fallback;
-}
-
 export function TurnoDetallePanel({ turno, onClose, onUpdated }: TurnoDetallePanelProps) {
   const [notas, setNotas] = useState(turno.notas_profesional ?? '');
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dialogo, setDialogo] = useState<'cancelar' | 'reasignar' | null>(null);
 
   const yaEmpezo = parseHoraNegocio(turno.fecha_inicio) <= new Date();
   const acciones = TRANSICIONES[turno.estado].filter(
     // Ausente desde CONFIRMADO solo después de la hora de inicio (igual que el backend)
     (destino) => !(turno.estado === 'CONFIRMADO' && destino === 'NO_ASISTIO' && !yaEmpezo)
   );
+
+  // CU-08: pendientes/confirmados solo si todavía no empezaron; en curso se puede cancelar
+  const futuro = (turno.estado === 'PENDIENTE' || turno.estado === 'CONFIRMADO') && !yaEmpezo;
+  const puedeReasignar = futuro;
+  const puedeCancelar = futuro || turno.estado === 'EN_CURSO';
+  const resumen = `${format(parseHoraNegocio(turno.fecha_inicio), "EEEE d MMM, HH:mm", { locale: es })} · ${turno.cliente_nombre} · ${turno.servicio_nombre}`;
 
   const cambiarEstado = async (destino: TurnoEstado) => {
     setSaving(destino);
@@ -86,6 +91,31 @@ export function TurnoDetallePanel({ turno, onClose, onUpdated }: TurnoDetallePan
         )}
       </div>
 
+      {turno.motivo_cancelacion && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">Motivo de cancelación: {turno.motivo_cancelacion}</p>
+      )}
+      {turno.reasignado_desde && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Reasignado desde el {format(parseHoraNegocio(turno.reasignado_desde), "d MMM, HH:mm", { locale: es })}
+          {turno.motivo_reasignacion && ` · ${turno.motivo_reasignacion}`}
+        </p>
+      )}
+
+      {(puedeReasignar || puedeCancelar) && (
+        <div className="flex flex-wrap gap-2">
+          {puedeReasignar && (
+            <Button size="sm" variant="outline" disabled={saving !== null} onClick={() => setDialogo('reasignar')}>
+              <CalendarClock className="h-4 w-4" /> Reasignar
+            </Button>
+          )}
+          {puedeCancelar && (
+            <Button size="sm" variant="outline" disabled={saving !== null} onClick={() => setDialogo('cancelar')}>
+              <XCircle className="h-4 w-4" /> Cancelar
+            </Button>
+          )}
+        </div>
+      )}
+
       {acciones.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {acciones.map((destino) => (
@@ -129,6 +159,28 @@ export function TurnoDetallePanel({ turno, onClose, onUpdated }: TurnoDetallePan
         <div className="flex items-center gap-2 rounded bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">
           <AlertCircle className="h-4 w-4" /> {error}
         </div>
+      )}
+
+      <CancelarDialog
+        open={dialogo === 'cancelar'}
+        resumen={resumen}
+        cancelar={(motivo) => api.cancelarTurnoProfesional(turno.id, motivo)}
+        onClose={() => setDialogo(null)}
+        onCancelado={(t) => {
+          setDialogo(null);
+          onUpdated(t);
+        }}
+      />
+      {dialogo === 'reasignar' && (
+        <ReasignarDialog
+          open
+          turno={turno}
+          onClose={() => setDialogo(null)}
+          onReasignado={(t) => {
+            setDialogo(null);
+            onUpdated(t);
+          }}
+        />
       )}
     </div>
   );

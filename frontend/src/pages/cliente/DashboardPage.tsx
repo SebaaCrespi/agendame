@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
+import { CancelarDialog } from '@/components/turnos/CancelarDialog';
 import { cn } from '@/utils/cn';
 import { formatHora, parseHoraNegocio } from '@/utils/horaNegocio';
 import { Calendar, Clock, User, Scissors, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -37,6 +38,7 @@ export function ClienteDashboard() {
     size: 10,
   });
   const [totalPages, setTotalPages] = useState(0);
+  const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
 
   // Load profesionales on mount
   useEffect(() => {
@@ -157,18 +159,6 @@ export function ClienteDashboard() {
     }
   };
 
-  const handleCancelarTurno = async (turno: Turno) => {
-    const motivo = prompt('Motivo de la cancelación:');
-    if (!motivo) return;
-
-    try {
-      await api.cancelarTurnoCliente(turno.id, motivo);
-      loadMisTurnos();
-    } catch (err) {
-      console.error('Error cancelando turno:', err);
-      alert('Error al cancelar turno');
-    }
-  };
 
   const canCancel = (turno: Turno): boolean => {
     if (!['PENDIENTE', 'CONFIRMADO'].includes(turno.estado)) return false;
@@ -512,7 +502,7 @@ export function ClienteDashboard() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleCancelarTurno(turno)}
+                          onClick={() => setTurnoACancelar(turno)}
                         >
                           <XCircle className="h-4 w-4" />
                           Cancelar
@@ -556,6 +546,18 @@ export function ClienteDashboard() {
             )}
           </CardContent>
         </Card>
+      )}
+      {turnoACancelar && (
+        <CancelarDialog
+          open
+          resumen={`${format(parseHoraNegocio(turnoACancelar.fecha_inicio), "EEEE d MMM, HH:mm", { locale: es })} · ${turnoACancelar.servicio_nombre} con ${turnoACancelar.profesional_nombre}`}
+          cancelar={(motivo) => api.cancelarTurnoCliente(turnoACancelar.id, motivo)}
+          onClose={() => setTurnoACancelar(null)}
+          onCancelado={() => {
+            setTurnoACancelar(null);
+            loadMisTurnos();
+          }}
+        />
       )}
     </div>
   );

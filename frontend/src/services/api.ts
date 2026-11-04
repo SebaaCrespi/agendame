@@ -228,6 +228,11 @@ class ApiClient {
     await this.client.delete(`/profesionales/me/excepciones/${id}`);
   }
 
+  async getMisSlots(params: { desde: string; hasta: string; servicio_id?: number; excluir_turno_id?: number }) {
+    const response = await this.client.get<import('../types').SlotsListResponse>('/profesionales/me/slots', { params });
+    return response.data;
+  }
+
   // Profesional - Turnos
   async getMisTurnosProfesional(filtros: import('../types').TurnoFiltrosProfesional) {
     const response = await this.client.get<import('../types').TurnoListResponse>('/profesionales/me/turnos', { params: filtros });

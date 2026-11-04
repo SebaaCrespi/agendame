@@ -173,20 +173,18 @@ class TurnoRepo:
         nueva_fecha_inicio: datetime,
         nueva_fecha_fin: datetime,
         motivo: str,
+        timestamp: datetime | None = None,
     ) -> Turno | None:
-        """Reassign turno to new datetime."""
+        """Reassign turno to new datetime, keeping the last reassignment for audit."""
         turno = await self.get_by_id(turno_id)
         if not turno:
             return None
 
-        # Store old values for audit (could be logged separately)
-        _ = turno.fecha_inicio
-        _ = turno.fecha_fin
-
+        turno.reasignado_desde = turno.fecha_inicio
+        turno.motivo_reasignacion = motivo
+        turno.reasignado_en = timestamp or datetime.now(UTC)
         turno.fecha_inicio = nueva_fecha_inicio
         turno.fecha_fin = nueva_fecha_fin
-        # Could add audit log here if needed
-        # For now, we could store in notas_profesional or a separate audit table
 
         await self.session.flush()
         await self.session.refresh(turno)

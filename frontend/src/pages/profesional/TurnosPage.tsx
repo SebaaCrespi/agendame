@@ -78,8 +78,11 @@ export function ProfesionalTurnosPage() {
   }, [cargar]);
 
   const onUpdated = (actualizado: Turno) => {
+    const anterior = turnos.find((t) => t.id === actualizado.id);
     setTurnos((prev) => prev.map((t) => (t.id === actualizado.id ? actualizado : t)));
     setSelected(actualizado);
+    // Reasignado (CU-08): puede haber salido de la semana o de los filtros
+    if (anterior && anterior.fecha_inicio !== actualizado.fecha_inicio) cargar();
   };
 
   const finSemana = addDays(inicioSemana, 6);

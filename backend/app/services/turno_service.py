@@ -92,20 +92,37 @@ class TurnoService:
         """Get cliente by its own ID (clientes.id)."""
         return await self.session.get(Cliente, cliente_id)
 
-    async def _validate_slot_libre(
-        self, profesional_id: int, fecha_inicio: datetime, fecha_fin: datetime
-    ) -> bool:
-        """Check if a slot is free for a profesional."""
-        # Get turnos that overlap with the requested slot
-        turnos_ocupados = await self.turno_repo.get_turnos_ocupados(
-            profesional_id, fecha_inicio.date(), fecha_fin.date()
-        )
+    async def _validar_slot(
+        self,
+        profesional_id: int,
+        fecha: date,
+        hora_inicio: time,
+        duracion_min: int,
+        excluir_turno_id: int | None = None,
+    ) -> None:
+        """
+        Valida que (fecha, hora_inicio) sea un slot disponible del profesional.
 
-        for turno in turnos_ocupados:
-            # Check overlap: new_start < existing_end AND new_end > existing_start
-            if fecha_inicio < _aware(turno.fecha_fin) and fecha_fin > _aware(turno.fecha_inicio):
-                return False
-        return True
+        Usa los mismos slots que muestra la disponibilidad: cubre grilla, excepciones,
+        cierre, alineación y solapamientos. Llamar dentro de `_reserva_locks[profesional_id]`.
+        - Pasado o sin slot a esa hora -> ValidationException (422)
+        - Slot ocupado -> ConflictException (409)
+        """
+        inicio = hora_inicio.replace(tzinfo=None)
+        if datetime.combine(fecha, inicio).replace(tzinfo=UTC) <= ahora_negocio():
+            raise ValidationException("El horario elegido ya pasó")
+
+        slots = await self.slot_service.generar_slots_disponibles(
+            profesional_id, fecha, fecha, duracion_min=duracion_min, excluir_turno_id=excluir_turno_id
+        )
+        slot = next((s for s in slots.slots if s.hora_inicio == inicio), None)
+        if slot is None:
+            raise ValidationException(
+                "El horario elegido está fuera de la atención del profesional "
+                "o el servicio no entra antes del cierre"
+            )
+        if not slot.disponible:
+            raise ConflictException("El slot seleccionado ya no está disponible")
 
     async def _validar_transicion(self, estado_actual: TurnoEstado, nuevo_estado: TurnoEstado) -> bool:
         """Validate if state transition is allowed."""
@@ -195,6 +212,32 @@ class TurnoService:
             profesionales=profesionales_con_slots,
         )
 
+    async def obtener_slots_profesional(
+        self,
+        profesional_id: int,
+        desde: date,
+        hasta: date,
+        servicio_id: int | None = None,
+        excluir_turno_id: int | None = None,
+    ) -> SlotsListResponse:
+        """
+        Slots propios del proveedor (CU-08).
+
+        Con `servicio_id`, los slots cubren la duración de ese servicio (404 si no es suyo).
+        Con `excluir_turno_id`, ese turno no cuenta como ocupado (para reasignarlo).
+        Rango inválido o mayor a 60 días -> ValueError.
+        """
+        duracion_min: int | None = None
+        if servicio_id is not None:
+            servicio = await self.servicio_repo.get_by_id_and_profesional(servicio_id, profesional_id)
+            if not servicio:
+                raise NotFoundException("Servicio", servicio_id)
+            duracion_min = servicio.duracion_min
+
+        return await self.slot_service.generar_slots_disponibles(
+            profesional_id, desde, hasta, duracion_min=duracion_min, excluir_turno_id=excluir_turno_id
+        )
+
     async def crear_reserva_manual(
         self,
         cliente_id: int,
@@ -230,26 +273,11 @@ class TurnoService:
         # Calcular fecha/hora fin
         fecha_inicio = datetime.combine(fecha, hora_inicio).replace(tzinfo=UTC)
         fecha_fin = fecha_inicio + timedelta(minutes=servicio.duracion_min)
-        if fecha_inicio <= ahora_negocio():
-            raise ValidationException("No se puede reservar un turno en el pasado")
 
         # Verificar y crear bajo lock, y commitear antes de soltarlo para que
         # una reserva concurrente vea el turno ya guardado.
         async with _reserva_locks[profesional_id]:
-            # Se valida contra los mismos slots que muestra la disponibilidad:
-            # cubre grilla, excepciones, cierre, alineación y solapamientos.
-            slots = await self.slot_service.generar_slots_disponibles(
-                profesional_id, fecha, fecha, duracion_min=servicio.duracion_min
-            )
-            inicio = hora_inicio.replace(tzinfo=None)
-            slot = next((s for s in slots.slots if s.hora_inicio == inicio), None)
-            if slot is None:
-                raise ValidationException(
-                    "El horario elegido está fuera de la atención del profesional "
-                    "o el servicio no entra antes del cierre"
-                )
-            if not slot.disponible:
-                raise ConflictException("El slot seleccionado ya no está disponible")
+            await self._validar_slot(profesional_id, fecha, hora_inicio, servicio.duracion_min)
 
             # Crear turno
             turno_data = {
@@ -324,7 +352,7 @@ class TurnoService:
 
         Valida:
         - Turno pertenece al profesional
-        - Estado futuro (no FINALIZADO, no cancelado)
+        - PENDIENTE/CONFIRMADO que todavía no empezó, o EN_CURSO (fuerza mayor)
         """
         turno = await self.turno_repo.get_by_id(turno_id)
         if not turno:
@@ -342,6 +370,13 @@ class TurnoService:
             TurnoEstado.NO_ASISTIO,
         ):
             raise ValidationException("No se puede cancelar un turno ya finalizado o cancelado")
+
+        # Un turno que ya empezó y no se atendió es un NO_ASISTIO, no una cancelación
+        if (
+            turno.estado in (TurnoEstado.PENDIENTE, TurnoEstado.CONFIRMADO)
+            and _aware(turno.fecha_inicio) <= ahora_negocio()
+        ):
+            raise ValidationException("El turno ya empezó: marcalo como ausente o finalizado")
 
         # Cancelar
         turno_cancelado = await self.turno_repo.cancelar(
@@ -413,8 +448,9 @@ class TurnoService:
         Valida:
         - Turno pertenece al profesional
         - Estado en {PENDIENTE, CONFIRMADO}
-        - Nuevo slot libre
-        - Mismo servicio (misma duración)
+        - Nuevo horario = slot disponible para la duración del servicio
+          (mismas reglas que la reserva; el propio turno no cuenta como ocupado)
+        - Guarda auditoría: horario anterior, motivo y momento
         """
         turno = await self.turno_repo.get_by_id(turno_id)
         if not turno:
@@ -437,28 +473,26 @@ class TurnoService:
         nueva_fecha_inicio = datetime.combine(nueva_fecha, nueva_hora_inicio).replace(tzinfo=UTC)
         nueva_fecha_fin = nueva_fecha_inicio + timedelta(minutes=servicio.duracion_min)
 
-        if nueva_fecha_inicio <= ahora_negocio():
-            raise ValidationException("No se puede reasignar un turno al pasado")
-
         async with _reserva_locks[profesional_id]:
-            # El propio turno no debe bloquear su nuevo horario
-            libre = all(
-                t.id == turno_id
-                or not (nueva_fecha_inicio < _aware(t.fecha_fin) and nueva_fecha_fin > _aware(t.fecha_inicio))
-                for t in await self.turno_repo.get_turnos_ocupados(
-                    profesional_id, nueva_fecha_inicio.date(), nueva_fecha_fin.date()
-                )
+            await self._validar_slot(
+                profesional_id,
+                nueva_fecha,
+                nueva_hora_inicio,
+                servicio.duracion_min,
+                excluir_turno_id=turno_id,
             )
-            if not libre:
-                raise ConflictException("El nuevo slot seleccionado ya no está disponible")
 
             turno_reasignado = await self.turno_repo.reasignar(
                 turno_id=turno_id,
                 nueva_fecha_inicio=nueva_fecha_inicio,
                 nueva_fecha_fin=nueva_fecha_fin,
                 motivo=motivo,
+                timestamp=datetime.now(UTC),
             )
+            if not turno_reasignado:
+                raise NotFoundException("Turno", turno_id)
             await self.session.commit()
+            await self.session.refresh(turno_reasignado)
 
         return TurnoResponse.model_validate(turno_reasignado)
 

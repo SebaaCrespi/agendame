@@ -165,3 +165,97 @@ class TestAusenciaApi:
             f"{BASE}/{sample_turno.id}/estado", json={"nuevo_estado": "NO_ASISTIO"}, headers=proveedor_headers
         )
         assert response.status_code == 422
+
+
+class TestCU08Api:
+    async def test_reasignar_fuera_de_horario_422(self, async_client, proveedor_headers, sample_turno):
+        response = await async_client.put(
+            f"{BASE}/{sample_turno.id}/reasignar",
+            json={"nueva_fecha": proximo_dia_habil(5).isoformat(), "nueva_hora_inicio": "03:00", "motivo": "x"},
+            headers=proveedor_headers,
+        )
+        assert response.status_code == 422
+
+    async def test_reasignar_devuelve_auditoria(self, async_client, proveedor_headers, sample_turno):
+        response = await async_client.put(
+            f"{BASE}/{sample_turno.id}/reasignar",
+            json={
+                "nueva_fecha": proximo_dia_habil(5).isoformat(),
+                "nueva_hora_inicio": "15:00",
+                "motivo": "Enfermedad",
+            },
+            headers=proveedor_headers,
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["motivo_reasignacion"] == "Enfermedad"
+        assert body["reasignado_desde"].startswith(f"{proximo_dia_habil(3).isoformat()}T10:00")
+        assert body["reasignado_en"] is not None
+
+    async def test_cancelar_turno_pasado_422(
+        self, async_client, proveedor_headers, make_turno, sample_cliente, sample_profesional, sample_servicio
+    ):
+        from datetime import UTC, datetime, time
+
+        ayer = datetime.combine(proximo_dia_habil(-1), time(10, 0), tzinfo=UTC)
+        turno = await make_turno(sample_cliente, sample_profesional, sample_servicio, inicio=ayer)
+        response = await async_client.put(
+            f"{BASE}/{turno.id}/cancelar", json={"motivo": "x"}, headers=proveedor_headers
+        )
+        assert response.status_code == 422
+
+
+SLOTS = "/api/v1/profesionales/me/slots"
+
+
+def _slot_de_las(response, hora: str) -> dict:
+    return next(s for s in response.json()["slots"] if s["hora_inicio"].startswith(hora))
+
+
+class TestMisSlotsApi:
+    async def test_excluir_turno(self, async_client, proveedor_headers, sample_turno, sample_servicio):
+        dia = proximo_dia_habil(3).isoformat()
+        params = {"desde": dia, "hasta": dia, "servicio_id": sample_servicio.id}
+        ocupado = await async_client.get(SLOTS, params=params, headers=proveedor_headers)
+        libre = await async_client.get(
+            SLOTS, params={**params, "excluir_turno_id": sample_turno.id}, headers=proveedor_headers
+        )
+        assert ocupado.status_code == 200, ocupado.text
+        assert _slot_de_las(ocupado, "10:00")["disponible"] is False
+        assert _slot_de_las(libre, "10:00")["disponible"] is True
+
+    async def test_duracion_del_servicio(self, async_client, proveedor_headers, servicio_largo):
+        dia = proximo_dia_habil(2).isoformat()
+        response = await async_client.get(
+            SLOTS, params={"desde": dia, "hasta": dia, "servicio_id": servicio_largo.id}, headers=proveedor_headers
+        )
+        assert response.status_code == 200
+        primero = response.json()["slots"][0]
+        assert primero["hora_inicio"].startswith("09:00")
+        assert primero["hora_fin"].startswith("10:00")
+
+    async def test_servicio_ajeno_404(self, async_client, proveedor_headers, db_session, make_profesional):
+        from app.models.profesional import Servicio
+
+        otro = await make_profesional(nombre="Otro")
+        ajeno = Servicio(profesional_id=otro.id, nombre="Ajeno", duracion_min=30, precio=1)
+        db_session.add(ajeno)
+        await db_session.commit()
+        dia = proximo_dia_habil(2).isoformat()
+        response = await async_client.get(
+            SLOTS, params={"desde": dia, "hasta": dia, "servicio_id": ajeno.id}, headers=proveedor_headers
+        )
+        assert response.status_code == 404
+
+    async def test_rango_mayor_a_60_dias_400(self, async_client, proveedor_headers):
+        response = await async_client.get(
+            SLOTS,
+            params={"desde": proximo_dia_habil(1).isoformat(), "hasta": proximo_dia_habil(70).isoformat()},
+            headers=proveedor_headers,
+        )
+        assert response.status_code == 400
+
+    async def test_cliente_no_puede_403(self, async_client, auth_headers):
+        dia = proximo_dia_habil(2).isoformat()
+        response = await async_client.get(SLOTS, params={"desde": dia, "hasta": dia}, headers=auth_headers)
+        assert response.status_code == 403

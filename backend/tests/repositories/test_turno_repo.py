@@ -386,6 +386,9 @@ class TestTurnoRepoReasignar:
         )
         assert result is not None
         assert result.fecha_inicio.strftime("%Y-%m-%d") == nueva_fecha
+        assert result.motivo_reasignacion == "Consulta solicitada por el cliente"
+        assert result.reasignado_desde is not None
+        assert result.reasignado_en is not None
 
     @pytest.mark.asyncio
     async def test_reasignar_validates_nuevo_slot_libre(self, repo, sample_turno, sample_profesional, sample_servicio):
