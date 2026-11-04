@@ -15,6 +15,8 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      // Arrays como parámetro repetido (estado=A&estado=B), el formato de FastAPI
+      paramsSerializer: { indexes: null },
     });
 
     this.setupInterceptors();

@@ -3,14 +3,15 @@
 from datetime import UTC, date, datetime, time
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.timeutils import ahora_negocio
 from app.models.cliente import Cliente
 from app.models.turno import Turno, TurnoEstado
 from app.models.user import User
-from app.schemas.turno import TurnoFiltros
+from app.schemas.turno import MomentoTurno, TurnoFiltros
 
 if TYPE_CHECKING:
     pass
@@ -36,16 +37,13 @@ class TurnoRepo:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_cliente(
-        self, cliente_id: int, filtros: TurnoFiltros
-    ) -> tuple[list[Turno], int]:
-        """Get turnos for a cliente with pagination and filters."""
-        # Base query
-        stmt = select(Turno).where(Turno.cliente_id == cliente_id)
-
-        # Apply filters
+    @staticmethod
+    def _aplicar_filtros_historial(
+        stmt: Select[tuple[Turno]], filtros: TurnoFiltros, orden_default: str
+    ) -> Select[tuple[Turno]]:
+        """Estados, rango de fechas, momento y orden, comunes al historial de cada rol (CU-09)."""
         if filtros.estado:
-            stmt = stmt.where(Turno.estado == TurnoEstado(filtros.estado))
+            stmt = stmt.where(Turno.estado.in_(filtros.estado))
         if filtros.desde:
             desde_dt = datetime.combine(filtros.desde, time.min).replace(tzinfo=UTC)
             stmt = stmt.where(Turno.fecha_inicio >= desde_dt)
@@ -53,8 +51,23 @@ class TurnoRepo:
             hasta_dt = datetime.combine(filtros.hasta, time.max).replace(tzinfo=UTC)
             stmt = stmt.where(Turno.fecha_inicio <= hasta_dt)
 
-        # Order by fecha_inicio desc (most recent first)
-        stmt = stmt.order_by(Turno.fecha_inicio.desc())
+        # Un turno es pasado cuando llegó su hora de fin: uno en curso sigue en próximos
+        if filtros.momento == MomentoTurno.PROXIMOS:
+            return stmt.where(Turno.fecha_fin > ahora_negocio()).order_by(Turno.fecha_inicio.asc())
+        if filtros.momento == MomentoTurno.PASADOS:
+            return stmt.where(Turno.fecha_fin <= ahora_negocio()).order_by(Turno.fecha_inicio.desc())
+        orden = Turno.fecha_inicio.desc() if orden_default == "desc" else Turno.fecha_inicio.asc()
+        return stmt.order_by(orden)
+
+    async def get_by_cliente(
+        self, cliente_id: int, filtros: TurnoFiltros
+    ) -> tuple[list[Turno], int]:
+        """Get turnos for a cliente with pagination and filters."""
+        # Base query
+        stmt = select(Turno).where(Turno.cliente_id == cliente_id)
+
+        # Filtros comunes; sin momento: más recientes primero
+        stmt = self._aplicar_filtros_historial(stmt, filtros, orden_default="desc")
 
         # Count total
         count_stmt = select(func.count()).select_from(stmt.subquery())
@@ -82,16 +95,6 @@ class TurnoRepo:
         # Base query
         stmt = select(Turno).where(Turno.profesional_id == profesional_id)
 
-        # Apply filters
-        if filtros.estado:
-            stmt = stmt.where(Turno.estado == TurnoEstado(filtros.estado))
-        if filtros.desde:
-            desde_dt = datetime.combine(filtros.desde, time.min).replace(tzinfo=UTC)
-            stmt = stmt.where(Turno.fecha_inicio >= desde_dt)
-        if filtros.hasta:
-            hasta_dt = datetime.combine(filtros.hasta, time.max).replace(tzinfo=UTC)
-            stmt = stmt.where(Turno.fecha_inicio <= hasta_dt)
-
         if filtros.servicio_id:
             stmt = stmt.where(Turno.servicio_id == filtros.servicio_id)
         if filtros.cliente:
@@ -101,8 +104,8 @@ class TurnoRepo:
                 .where(func.lower(User.nombre).contains(filtros.cliente.lower()))
             )
 
-        # Order by fecha_inicio asc (chronological for grilla)
-        stmt = stmt.order_by(Turno.fecha_inicio.asc())
+        # Filtros comunes; sin momento: cronológico (grilla semanal)
+        stmt = self._aplicar_filtros_historial(stmt, filtros, orden_default="asc")
 
         # Count total
         count_stmt = select(func.count()).select_from(stmt.subquery())

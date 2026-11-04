@@ -1,9 +1,11 @@
 """Pydantic schemas for Turno (appointments)."""
 
+import enum
 from datetime import date, datetime, time
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
+from app.models.turno import TurnoEstado
 from app.schemas.pagination import PageResponse
 
 # ============================================================================
@@ -94,13 +96,21 @@ class TurnoNotasUpdate(BaseModel):
     notas_profesional: str = Field(max_length=1000, description="Notas internas del profesional")
 
 
+class MomentoTurno(str, enum.Enum):
+    """Momento del turno respecto de ahora (hora del negocio)."""
+
+    PROXIMOS = "proximos"  # todavía no terminó: del más cercano al más lejano
+    PASADOS = "pasados"  # ya terminó: del más reciente al más viejo
+
+
 class TurnoFiltros(BaseModel):
     """Filtros para listado de turnos."""
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "estado": "CONFIRMADO",
+                "estado": ["CONFIRMADO"],
+                "momento": "proximos",
                 "desde": "2026-10-01",
                 "hasta": "2026-10-31",
                 "page": 1,
@@ -109,7 +119,8 @@ class TurnoFiltros(BaseModel):
         }
     )
 
-    estado: str | None = Field(default=None, pattern="^(PENDIENTE|CONFIRMADO|EN_CURSO|FINALIZADO|CANCELADO_CLIENTE|CANCELADO_PROFESIONAL|NO_ASISTIO)$")
+    estado: list[TurnoEstado] | None = Field(default=None, description="Uno o varios estados (CU-09)")
+    momento: MomentoTurno | None = Field(default=None, description="proximos | pasados (CU-09)")
     desde: date | None = Field(default=None, description="Fecha desde (inclusive)")
     hasta: date | None = Field(default=None, description="Fecha hasta (inclusive)")
     page: int = Field(default=1, ge=1, description="Número de página")
@@ -118,6 +129,14 @@ class TurnoFiltros(BaseModel):
     cliente: str | None = Field(
         default=None, min_length=1, max_length=100, description="Texto contenido en el nombre del cliente"
     )
+
+    @field_validator("estado", mode="before")
+    @classmethod
+    def _estado_como_lista(cls, v: object) -> object:
+        """Un solo estado se acepta como lista de un elemento."""
+        if v is None or isinstance(v, list):
+            return v
+        return [v]
 
 
 class TurnoResponse(BaseModel):

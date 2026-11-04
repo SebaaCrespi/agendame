@@ -2,7 +2,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/utils/cn';
-import { Menu, X, LogOut, User, LayoutDashboard, Calendar, Settings, Building2 } from 'lucide-react';
+import { Menu, X, LogOut, User, LayoutDashboard, Calendar, Settings, Building2, History as HistoryIcon } from 'lucide-react';
 import { useState } from 'react';
 
 export function Header() {
@@ -14,6 +14,7 @@ export function Header() {
       ? [
           { path: '/profesional/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { path: '/profesional/turnos', label: 'Mis Turnos', icon: Calendar },
+          { path: '/profesional/historial', label: 'Historial', icon: HistoryIcon },
           { path: '/profesional/perfil', label: 'Mi Perfil', icon: User },
           { path: '/profesional/servicios', label: 'Servicios', icon: Building2 },
           { path: '/profesional/disponibilidad', label: 'Disponibilidad', icon: Settings },
@@ -46,14 +47,14 @@ export function Header() {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex md:items-center md:gap-1">
+            <div className="hidden lg:flex lg:items-center lg:gap-1">
               {navItems.map((item) => (
                 <NavLink
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center gap-2 whitespace-nowrap px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                       isActive
                         ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
                         : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
@@ -71,7 +72,7 @@ export function Header() {
           <div className="flex items-center gap-4">
             {user ? (
               <div className="flex items-center gap-4">
-                <div className="hidden sm:flex sm:items-center gap-3 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800">
+                <div className="hidden xl:flex xl:items-center gap-3 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800">
                   <User className="h-5 w-5 text-gray-400" aria-hidden="true" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {user.nombre}
@@ -98,7 +99,7 @@ export function Header() {
 
             {/* Mobile menu button */}
             <button
-              className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu"
@@ -111,7 +112,7 @@ export function Header() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div id="mobile-menu" className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700">
+          <div id="mobile-menu" className="lg:hidden py-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <NavLink

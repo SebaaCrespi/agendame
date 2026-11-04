@@ -7,9 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_cliente
 from app.core.database import get_db
+from app.models.turno import TurnoEstado
 from app.models.user import User
 from app.schemas.turno import (
     DisponibilidadResponse,
+    MomentoTurno,
     TurnoCancelar,
     TurnoCreate,
     TurnoFiltros,
@@ -92,7 +94,8 @@ async def crear_reserva(
     description="Lista paginada de turnos del cliente autenticado con filtros opcionales.",
 )
 async def listar_mis_turnos(
-    estado: str | None = Query(None, description="Filtrar por estado"),
+    estado: list[TurnoEstado] | None = Query(None, description="Filtrar por estado (se puede repetir)"),
+    momento: MomentoTurno | None = Query(None, description="proximos | pasados"),
     desde: date | None = Query(None, description="Fecha desde (inclusive)"),
     hasta: date | None = Query(None, description="Fecha hasta (inclusive)"),
     page: int = Query(1, ge=1, description="Número de página"),
@@ -108,7 +111,7 @@ async def listar_mis_turnos(
             detail="Cliente no encontrado"
         )
 
-    filtros = TurnoFiltros(estado=estado, desde=desde, hasta=hasta, page=page, size=size)
+    filtros = TurnoFiltros(estado=estado, momento=momento, desde=desde, hasta=hasta, page=page, size=size)
     service = TurnoService(session)
     turnos, total = await service.get_turnos_by_cliente(cliente.id, filtros)
 

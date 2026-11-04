@@ -24,6 +24,7 @@ from app.schemas.profesional import (
     SlotsListResponse,
 )
 from app.schemas.turno import (
+    MomentoTurno,
     TurnoCancelar,
     TurnoEstadoUpdate,
     TurnoFiltros,
@@ -310,7 +311,8 @@ async def obtener_mis_slots(
     description="Lista paginada de turnos del profesional autenticado con filtros opcionales.",
 )
 async def listar_mis_turnos(
-    estado: str | None = Query(None, description="Filtrar por estado"),
+    estado: list[TurnoEstado] | None = Query(None, description="Filtrar por estado (se puede repetir)"),
+    momento: MomentoTurno | None = Query(None, description="proximos | pasados"),
     desde: date | None = Query(None, description="Fecha desde (inclusive)"),
     hasta: date | None = Query(None, description="Fecha hasta (inclusive)"),
     page: int = Query(1, ge=1, description="Número de página"),
@@ -331,7 +333,14 @@ async def listar_mis_turnos(
         )
 
     filtros = TurnoFiltros(
-        estado=estado, desde=desde, hasta=hasta, page=page, size=size, servicio_id=servicio_id, cliente=cliente
+        estado=estado,
+        momento=momento,
+        desde=desde,
+        hasta=hasta,
+        page=page,
+        size=size,
+        servicio_id=servicio_id,
+        cliente=cliente,
     )
     service = TurnoService(session)
     turnos, total = await service.get_turnos_by_profesional(profesional.id, filtros)

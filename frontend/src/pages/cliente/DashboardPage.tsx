@@ -5,11 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
-import { CancelarDialog } from '@/components/turnos/CancelarDialog';
+import { MisTurnosCliente } from '@/components/turnos/MisTurnosCliente';
 import { cn } from '@/utils/cn';
-import { formatHora, parseHoraNegocio } from '@/utils/horaNegocio';
-import { Calendar, Clock, User, Scissors, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { ProfesionalPublic, ServicioPublic, DisponibilidadResponse, SlotDisponible, Turno, TurnoFiltros } from '@/types';
+import { Calendar, Clock, User, Scissors, CheckCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { ProfesionalPublic, ServicioPublic, DisponibilidadResponse, SlotDisponible } from '@/types';
 
 const formatPrecio = (centavos: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(centavos / 100);
@@ -30,20 +29,10 @@ export function ClienteDashboard() {
   const [reservaError, setReservaError] = useState<string | null>(null);
   const [reservaSuccess, setReservaSuccess] = useState<string | null>(null);
 
-  // Mis Turnos state
-  const [misTurnos, setMisTurnos] = useState<Turno[]>([]);
-  const [loadingTurnos, setLoadingTurnos] = useState(false);
-  const [filtros, setFiltros] = useState<TurnoFiltros>({
-    page: 1,
-    size: 10,
-  });
-  const [totalPages, setTotalPages] = useState(0);
-  const [turnoACancelar, setTurnoACancelar] = useState<Turno | null>(null);
 
   // Load profesionales on mount
   useEffect(() => {
     loadProfesionales();
-    loadMisTurnos();
   }, []);
 
   const loadProfesionales = async () => {
@@ -52,19 +41,6 @@ export function ClienteDashboard() {
       setProfesionales(data.filter(p => p.activo));
     } catch (err) {
       console.error('Error loading profesionales:', err);
-    }
-  };
-
-  const loadMisTurnos = async () => {
-    setLoadingTurnos(true);
-    try {
-      const data = await api.getMisTurnos(filtros);
-      setMisTurnos(data.items);
-      setTotalPages(data.pages);
-    } catch (err) {
-      console.error('Error loading turnos:', err);
-    } finally {
-      setLoadingTurnos(false);
     }
   };
 
@@ -145,7 +121,6 @@ export function ClienteDashboard() {
       setSelectedSlot(null);
       setSelectedServicio(null);
       setSelectedProfesional(null);
-      loadMisTurnos();
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number; data?: { detail?: string } } };
       setReservaError(axiosError.response?.data?.detail || 'Error al reservar turno');
@@ -159,26 +134,6 @@ export function ClienteDashboard() {
     }
   };
 
-
-  const canCancel = (turno: Turno): boolean => {
-    if (!['PENDIENTE', 'CONFIRMADO'].includes(turno.estado)) return false;
-    const ahora = new Date();
-    const fechaTurno = parseHoraNegocio(turno.fecha_inicio);
-    const diffHours = (fechaTurno.getTime() - ahora.getTime()) / (1000 * 60 * 60);
-    return diffHours > 2;
-  };
-
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'CONFIRMADO': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'EN_CURSO': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-      case 'FINALIZADO': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-      case 'CANCELADO_CLIENTE': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      case 'CANCELADO_PROFESIONAL': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
-      case 'NO_ASISTIO': return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
-      default: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-    }
-  };
 
   const semanaActual = format(selectedDate, 'PPPP', { locale: es });
   const inicioSemana = startOfWeek(selectedDate, { weekStartsOn: 1 });
@@ -436,128 +391,19 @@ export function ClienteDashboard() {
         </div>
       )}
 
-      {/* Tab: Mis Turnos */}
+      {/* Tab: Mis Turnos (CU-09) */}
       {activeTab === 'mis-turnos' && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" /> Mis turnos
             </CardTitle>
-            <CardDescription>Gestiona tus próximas citas</CardDescription>
+            <CardDescription>Tus próximas citas y tu historial</CardDescription>
           </CardHeader>
           <CardContent>
-            {loadingTurnos ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent" />
-              </div>
-            ) : misTurnos.length === 0 ? (
-              <div className="text-center py-12">
-                <Calendar className="h-16 w-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No tienes turnos</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">Cuando reserves, aparecerán aquí</p>
-                <Button onClick={() => setActiveTab('reservar')}>
-                  Reservar mi primer turno
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {misTurnos.map((turno) => (
-                  <div
-                    key={turno.id}
-                    className={cn(
-                      'flex items-center gap-4 p-4 rounded-lg border transition-colors',
-                      'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
-                    )}
-                  >
-                    <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                        {format(parseHoraNegocio(turno.fecha_inicio), 'd')}
-                      </span>
-                      <span className="text-xs text-indigo-600 dark:text-indigo-400">
-                        {format(parseHoraNegocio(turno.fecha_inicio), 'MMM', { locale: es })}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-gray-900 dark:text-white truncate">
-                          {turno.profesional?.nombre} {turno.profesional?.apellido}
-                        </h4>
-                        <span className={cn('px-2 py-0.5 text-xs font-medium rounded-full', getEstadoColor(turno.estado))}>
-                          {turno.estado.replace('_', ' ')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                        {turno.servicio?.nombre}
-                      </p>
-                      <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {formatHora(turno.fecha_inicio)} -{' '}
-                          {formatHora(turno.fecha_fin)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {canCancel(turno) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setTurnoACancelar(turno)}
-                        >
-                          <XCircle className="h-4 w-4" />
-                          Cancelar
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setFiltros((prev) => ({ ...prev, page: prev.page - 1 }));
-                        loadMisTurnos();
-                      }}
-                      disabled={filtros.page === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Página {filtros.page} de {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setFiltros((prev) => ({ ...prev, page: prev.page + 1 }));
-                        loadMisTurnos();
-                      }}
-                      disabled={filtros.page === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
+            <MisTurnosCliente onReservar={() => setActiveTab('reservar')} />
           </CardContent>
         </Card>
-      )}
-      {turnoACancelar && (
-        <CancelarDialog
-          open
-          resumen={`${format(parseHoraNegocio(turnoACancelar.fecha_inicio), "EEEE d MMM, HH:mm", { locale: es })} · ${turnoACancelar.servicio_nombre} con ${turnoACancelar.profesional_nombre}`}
-          cancelar={(motivo) => api.cancelarTurnoCliente(turnoACancelar.id, motivo)}
-          onClose={() => setTurnoACancelar(null)}
-          onCancelado={() => {
-            setTurnoACancelar(null);
-            loadMisTurnos();
-          }}
-        />
       )}
     </div>
   );

@@ -209,8 +209,13 @@ export interface TurnoCreate {
   hora_inicio: string; // HH:MM:SS
 }
 
+/** Próximos: todavía no terminaron. Pasados: ya terminaron (CU-09). */
+export type MomentoTurno = 'proximos' | 'pasados';
+
 export interface TurnoFiltros {
-  estado?: TurnoEstado;
+  /** Uno o varios estados; se envía como parámetro repetido. */
+  estado?: TurnoEstado[];
+  momento?: MomentoTurno;
   desde?: string; // YYYY-MM-DD
   hasta?: string; // YYYY-MM-DD
   page: number;

@@ -60,7 +60,7 @@ export function ProfesionalTurnosPage() {
         hasta: format(addDays(inicioSemana, 6), 'yyyy-MM-dd'),
         page: 1,
         size: LIMITE,
-        ...(estado && { estado }),
+        ...(estado && { estado: [estado] }),
         ...(servicioId && { servicio_id: servicioId }),
         ...(clienteBuscado && { cliente: clienteBuscado }),
       });

@@ -7,6 +7,7 @@ import { RegisterPage } from '@/pages/auth/RegisterPage';
 import { ClienteDashboard } from '@/pages/cliente/DashboardPage';
 import { ProfesionalDashboard } from '@/pages/profesional/DashboardPage';
 import { ProfesionalTurnosPage } from '@/pages/profesional/TurnosPage';
+import { ProfesionalHistorialPage } from '@/pages/profesional/HistorialPage';
 
 const HOME_POR_ROL = {
   CLIENTE: '/cliente/dashboard',
@@ -87,6 +88,7 @@ function AppRoutes() {
         <Route index element={<Navigate to="/profesional/dashboard" replace />} />
         <Route path="dashboard" element={<ProfesionalDashboard />} />
         <Route path="turnos" element={<ProfesionalTurnosPage />} />
+        <Route path="historial" element={<ProfesionalHistorialPage />} />
         <Route path="perfil" element={<div>Mi Perfil - Próximamente</div>} />
         <Route path="servicios" element={<div>Servicios - Próximamente</div>} />
         <Route path="disponibilidad" element={<div>Disponibilidad - Próximamente</div>} />

@@ -44,3 +44,20 @@ export const ACCION_LABEL: Partial<Record<TurnoEstado, string>> = {
 };
 
 export const ESTADOS: TurnoEstado[] = Object.keys(ESTADO_LABEL) as TurnoEstado[];
+
+/** Grupos de estado del historial (CU-09). */
+export const GRUPOS_ESTADO = {
+  todos: { label: 'Todos', estados: undefined },
+  activos: { label: 'Activos', estados: ['PENDIENTE', 'CONFIRMADO', 'EN_CURSO'] },
+  finalizados: { label: 'Finalizados', estados: ['FINALIZADO'] },
+  cancelados: { label: 'Cancelados', estados: ['CANCELADO_CLIENTE', 'CANCELADO_PROFESIONAL'] },
+  ausentes: { label: 'No asistió', estados: ['NO_ASISTIO'] },
+} as const satisfies Record<string, { label: string; estados: readonly TurnoEstado[] | undefined }>;
+
+export type GrupoEstado = keyof typeof GRUPOS_ESTADO;
+
+/** Estados del grupo como lista mutable para los filtros de la API. */
+export function estadosDelGrupo(grupo: GrupoEstado): TurnoEstado[] | undefined {
+  const estados = GRUPOS_ESTADO[grupo].estados;
+  return estados ? [...estados] : undefined;
+}
