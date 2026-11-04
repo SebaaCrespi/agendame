@@ -56,6 +56,7 @@ class TurnoService:
         ],
         TurnoEstado.CONFIRMADO: [
             TurnoEstado.EN_CURSO,
+            TurnoEstado.NO_ASISTIO,  # solo después de la hora de inicio (ver cambiar_estado)
             TurnoEstado.CANCELADO_CLIENTE,
             TurnoEstado.CANCELADO_PROFESIONAL,
         ],
@@ -375,6 +376,14 @@ class TurnoService:
             raise ValidationException(
                 f"Transición inválida: {turno.estado.value} → {nuevo_estado.value}"
             )
+
+        # Un ausente solo se puede marcar una vez que pasó la hora del turno
+        if (
+            turno.estado == TurnoEstado.CONFIRMADO
+            and nuevo_estado == TurnoEstado.NO_ASISTIO
+            and _aware(turno.fecha_inicio) > ahora_negocio()
+        ):
+            raise ValidationException("Solo se puede marcar ausente después de la hora de inicio del turno")
 
         # Determinar qué timestamp actualizar
         timestamp_campo = None

@@ -502,3 +502,33 @@ class TestReservaDentroDelHorario:
             await self._reservar(db_session, sample_cliente, sample_profesional, sample_servicio, time(15, 0))
         ok = await self._reservar(db_session, sample_cliente, sample_profesional, sample_servicio, time(13, 30))
         assert ok.estado == TurnoEstado.CONFIRMADO
+
+
+class TestMarcarAusencia:
+    async def test_despues_de_la_hora(
+        self, db_session, monkeypatch, make_turno, sample_cliente, sample_profesional, sample_servicio
+    ):
+        from app.core import timeutils
+
+        # 13:20 UTC = 10:20 locales; el turno empezaba a las 10:00
+        monkeypatch.setattr(timeutils, "_utcnow", lambda: datetime(2026, 11, 2, 13, 20, tzinfo=UTC))
+        turno = await make_turno(
+            sample_cliente, sample_profesional, sample_servicio, inicio=datetime(2026, 11, 2, 10, 0, tzinfo=UTC)
+        )
+        result = await TurnoService(db_session).cambiar_estado(turno.id, sample_profesional.id, TurnoEstado.NO_ASISTIO)
+        assert result.estado == TurnoEstado.NO_ASISTIO
+
+    async def test_antes_de_la_hora(
+        self, db_session, monkeypatch, make_turno, sample_cliente, sample_profesional, sample_servicio
+    ):
+        from app.core import timeutils
+
+        # 12:00 UTC = 09:00 locales
+        monkeypatch.setattr(timeutils, "_utcnow", lambda: datetime(2026, 11, 2, 12, 0, tzinfo=UTC))
+        turno = await make_turno(
+            sample_cliente, sample_profesional, sample_servicio, inicio=datetime(2026, 11, 2, 10, 0, tzinfo=UTC)
+        )
+        with pytest.raises(ValidationException):
+            await TurnoService(db_session).cambiar_estado(turno.id, sample_profesional.id, TurnoEstado.NO_ASISTIO)
+        await db_session.refresh(turno)
+        assert turno.estado == TurnoEstado.CONFIRMADO

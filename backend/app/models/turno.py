@@ -79,5 +79,22 @@ class Turno(Base):
         Index("ix_turno_servicio_fecha", "servicio_id", "fecha_inicio"),
     )
 
+    # Datos legibles para las respuestas de la API (relaciones cargadas con selectin)
+    @property
+    def cliente_nombre(self) -> str:
+        return self.cliente.user.nombre
+
+    @property
+    def cliente_telefono(self) -> str | None:
+        return self.cliente.telefono
+
+    @property
+    def servicio_nombre(self) -> str:
+        return self.servicio.nombre
+
+    @property
+    def profesional_nombre(self) -> str:
+        return f"{self.profesional.nombre} {self.profesional.apellido}"
+
     def __repr__(self) -> str:
         return f"<Turno(id={self.id}, prof={self.profesional_id}, cliente={self.cliente_id}, {self.fecha_inicio}-{self.fecha_fin}, {self.estado.value})>"

@@ -114,6 +114,10 @@ class TurnoFiltros(BaseModel):
     hasta: date | None = Field(default=None, description="Fecha hasta (inclusive)")
     page: int = Field(default=1, ge=1, description="Número de página")
     size: int = Field(default=20, ge=1, le=100, description="Tamaño de página (máx 100)")
+    servicio_id: int | None = Field(default=None, ge=1, description="Filtrar por servicio")
+    cliente: str | None = Field(
+        default=None, min_length=1, max_length=100, description="Texto contenido en el nombre del cliente"
+    )
 
 
 class TurnoResponse(BaseModel):
@@ -162,6 +166,11 @@ class TurnoResponse(BaseModel):
     actualizado_en: datetime = Field(validation_alias=AliasChoices("actualizado_en", "updated_at"))
     confirmado_en: datetime | None = None
     finalizado_en: datetime | None = None
+    # Datos legibles (CU-07)
+    cliente_nombre: str
+    cliente_telefono: str | None = None
+    servicio_nombre: str
+    profesional_nombre: str
 
 
 class TurnoListResponse(PageResponse[TurnoResponse]):

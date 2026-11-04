@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models.cliente import Cliente
 from app.models.turno import Turno, TurnoEstado
+from app.models.user import User
 from app.schemas.turno import TurnoFiltros
 
 if TYPE_CHECKING:
@@ -90,6 +91,15 @@ class TurnoRepo:
         if filtros.hasta:
             hasta_dt = datetime.combine(filtros.hasta, time.max).replace(tzinfo=UTC)
             stmt = stmt.where(Turno.fecha_inicio <= hasta_dt)
+
+        if filtros.servicio_id:
+            stmt = stmt.where(Turno.servicio_id == filtros.servicio_id)
+        if filtros.cliente:
+            stmt = (
+                stmt.join(Cliente, Turno.cliente_id == Cliente.id)
+                .join(User, Cliente.user_id == User.id)
+                .where(func.lower(User.nombre).contains(filtros.cliente.lower()))
+            )
 
         # Order by fecha_inicio asc (chronological for grilla)
         stmt = stmt.order_by(Turno.fecha_inicio.asc())

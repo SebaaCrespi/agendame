@@ -203,7 +203,7 @@ class ApiClient {
   }
 
   async getMiGrilla() {
-    const response = await this.client.get<{ grilla: import('../types').Disponibilidad[] }>('/profesionales/me/disponibilidad');
+    const response = await this.client.get<import('../types').GrillaProfesional>('/profesionales/me/disponibilidad');
     return response.data;
   }
 
@@ -229,7 +229,7 @@ class ApiClient {
   }
 
   // Profesional - Turnos
-  async getMisTurnosProfesional(filtros: import('../types').TurnoFiltros) {
+  async getMisTurnosProfesional(filtros: import('../types').TurnoFiltrosProfesional) {
     const response = await this.client.get<import('../types').TurnoListResponse>('/profesionales/me/turnos', { params: filtros });
     return response.data;
   }

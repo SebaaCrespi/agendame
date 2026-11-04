@@ -6,6 +6,7 @@ import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { cn } from '@/utils/cn';
+import { formatHora, parseHoraNegocio } from '@/utils/horaNegocio';
 import { Calendar, Clock, User, Scissors, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ProfesionalPublic, ServicioPublic, DisponibilidadResponse, SlotDisponible, Turno, TurnoFiltros } from '@/types';
 
@@ -172,7 +173,7 @@ export function ClienteDashboard() {
   const canCancel = (turno: Turno): boolean => {
     if (!['PENDIENTE', 'CONFIRMADO'].includes(turno.estado)) return false;
     const ahora = new Date();
-    const fechaTurno = new Date(turno.fecha_inicio);
+    const fechaTurno = parseHoraNegocio(turno.fecha_inicio);
     const diffHours = (fechaTurno.getTime() - ahora.getTime()) / (1000 * 60 * 60);
     return diffHours > 2;
   };
@@ -480,10 +481,10 @@ export function ClienteDashboard() {
                   >
                     <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex flex-col items-center justify-center">
                       <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-                        {format(parseISO(turno.fecha_inicio), 'd')}
+                        {format(parseHoraNegocio(turno.fecha_inicio), 'd')}
                       </span>
                       <span className="text-xs text-indigo-600 dark:text-indigo-400">
-                        {format(parseISO(turno.fecha_inicio), 'MMM', { locale: es })}
+                        {format(parseHoraNegocio(turno.fecha_inicio), 'MMM', { locale: es })}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -501,8 +502,8 @@ export function ClienteDashboard() {
                       <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          {format(parseISO(turno.fecha_inicio), 'HH:mm')} -{' '}
-                          {format(parseISO(turno.fecha_fin), 'HH:mm')}
+                          {formatHora(turno.fecha_inicio)} -{' '}
+                          {formatHora(turno.fecha_fin)}
                         </span>
                       </div>
                     </div>

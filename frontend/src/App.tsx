@@ -5,6 +5,21 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
 import { ClienteDashboard } from '@/pages/cliente/DashboardPage';
+import { ProfesionalDashboard } from '@/pages/profesional/DashboardPage';
+import { ProfesionalTurnosPage } from '@/pages/profesional/TurnosPage';
+
+const HOME_POR_ROL = {
+  CLIENTE: '/cliente/dashboard',
+  PROVEEDOR: '/profesional/dashboard',
+  ADMIN: '/admin/dashboard',
+} as const;
+
+/** Lleva a cada usuario al panel de su rol (evita el loop "/" <-> ruta de otro rol). */
+function RoleRedirect() {
+  const { isLoading, user } = useAuth();
+  if (isLoading) return null;
+  return <Navigate to={user ? HOME_POR_ROL[user.rol] : '/login'} replace />;
+}
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isLoading, user } = useAuth();
@@ -70,8 +85,8 @@ function AppRoutes() {
         }
       >
         <Route index element={<Navigate to="/profesional/dashboard" replace />} />
-        <Route path="dashboard" element={<div>Profesional Dashboard - Próximamente</div>} />
-        <Route path="turnos" element={<div>Mis Turnos - Próximamente</div>} />
+        <Route path="dashboard" element={<ProfesionalDashboard />} />
+        <Route path="turnos" element={<ProfesionalTurnosPage />} />
         <Route path="perfil" element={<div>Mi Perfil - Próximamente</div>} />
         <Route path="servicios" element={<div>Servicios - Próximamente</div>} />
         <Route path="disponibilidad" element={<div>Disponibilidad - Próximamente</div>} />
@@ -93,8 +108,8 @@ function AppRoutes() {
       </Route>
 
       {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/cliente/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/cliente/dashboard" replace />} />
+      <Route path="/" element={<RoleRedirect />} />
+      <Route path="*" element={<RoleRedirect />} />
     </Routes>
   );
 }

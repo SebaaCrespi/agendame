@@ -181,6 +181,11 @@ export interface Turno {
   actualizado_en: string;
   confirmado_en: string | null;
   finalizado_en: string | null;
+  // Datos legibles (CU-07)
+  cliente_nombre: string;
+  cliente_telefono: string | null;
+  servicio_nombre: string;
+  profesional_nombre: string;
   profesional?: Profesional;
   servicio?: Servicio;
   cliente?: Cliente;
@@ -206,6 +211,19 @@ export interface TurnoFiltros {
   hasta?: string; // YYYY-MM-DD
   page: number;
   size: number;
+}
+
+/** Filtros extra del listado del proveedor. */
+export interface TurnoFiltrosProfesional extends TurnoFiltros {
+  servicio_id?: number;
+  cliente?: string;
+}
+
+/** Grilla semanal del profesional autenticado. */
+export interface GrillaProfesional {
+  profesional_id: number;
+  slot_duracion_min: number;
+  grilla: { id: number; dia_semana: string; hora_inicio: string; hora_fin: string; activo: boolean }[];
 }
 
 export interface TurnoListResponse {

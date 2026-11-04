@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_proveedor
 from app.core.database import get_db
+from app.models.profesional import Profesional
 from app.models.turno import TurnoEstado
 from app.models.user import User
 from app.schemas.profesional import (
@@ -36,6 +37,17 @@ from app.services.servicio_service import ServicioService
 from app.services.turno_service import TurnoService
 
 router = APIRouter(prefix="/profesionales/me", tags=["Profesional - Mi Perfil"])
+
+
+async def get_mi_profesional(
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_proveedor),
+) -> Profesional:
+    """Perfil profesional del usuario autenticado (404 si no tiene)."""
+    profesional = await ProfesionalService(session).obtener_por_usuario(current_user.id)
+    if not profesional:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil profesional no encontrado")
+    return profesional
 
 
 # =============================================================================
@@ -91,11 +103,11 @@ async def actualizar_mi_perfil(
 )
 async def listar_mis_servicios(
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_proveedor),
+    profesional: Profesional = Depends(get_mi_profesional),
 ) -> list[ServicioResponse]:
     """Listar mis servicios (Profesional)."""
     service = ServicioService(session)
-    servicios = await service.listar_mis_servicios(current_user.id)
+    servicios = await service.listar_mis_servicios(profesional.id)
     return [ServicioResponse.model_validate(s) for s in servicios]
 
 
@@ -109,12 +121,12 @@ async def listar_mis_servicios(
 async def crear_servicio(
     data: ServicioCreate,
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_proveedor),
+    profesional: Profesional = Depends(get_mi_profesional),
 ) -> ServicioResponse:
     """Crear servicio (Profesional)."""
     service = ServicioService(session)
     try:
-        servicio = await service.crear_servicio(current_user.id, data)
+        servicio = await service.crear_servicio(profesional.id, data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from None
     return ServicioResponse.model_validate(servicio)
@@ -130,12 +142,12 @@ async def actualizar_servicio(
     data: ServicioUpdate,
     servicio_id: int = Path(..., ge=1, description="ID del servicio"),
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_proveedor),
+    profesional: Profesional = Depends(get_mi_profesional),
 ) -> ServicioResponse:
     """Actualizar servicio (Profesional)."""
     service = ServicioService(session)
     try:
-        servicio = await service.actualizar_servicio(servicio_id, current_user.id, data)
+        servicio = await service.actualizar_servicio(servicio_id, profesional.id, data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from None
 
@@ -153,11 +165,11 @@ async def actualizar_servicio(
 async def desactivar_servicio(
     servicio_id: int = Path(..., ge=1, description="ID del servicio"),
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_proveedor),
+    profesional: Profesional = Depends(get_mi_profesional),
 ) -> None:
     """Desactivar servicio (Profesional)."""
     service = ServicioService(session)
-    success = await service.desactivar_servicio(servicio_id, current_user.id)
+    success = await service.desactivar_servicio(servicio_id, profesional.id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Servicio no encontrado")
 
@@ -174,12 +186,12 @@ async def desactivar_servicio(
 )
 async def obtener_mi_grilla(
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_proveedor),
+    profesional: Profesional = Depends(get_mi_profesional),
 ) -> GrillaDisponibilidadResponse:
     """Obtener mi grilla de disponibilidad (Profesional)."""
     service = DisponibilidadService(session)
     try:
-        return await service.obtener_mi_grilla(current_user.id)
+        return await service.obtener_mi_grilla(profesional.id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from None
 
@@ -193,12 +205,12 @@ async def obtener_mi_grilla(
 async def actualizar_grilla_completa(
     grilla: list[DisponibilidadCreate],
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_proveedor),
+    profesional: Profesional = Depends(get_mi_profesional),
 ) -> GrillaDisponibilidadResponse:
     """Actualizar grilla completa (Profesional)."""
     service = DisponibilidadService(session)
     try:
-        return await service.actualizar_grilla_completa(current_user.id, grilla)
+        return await service.actualizar_grilla_completa(profesional.id, grilla)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
 
@@ -217,11 +229,11 @@ async def obtener_excepciones(
     desde: date | None = Query(None, description="Fecha desde (inclusive)"),
     hasta: date | None = Query(None, description="Fecha hasta (inclusive)"),
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_proveedor),
+    profesional: Profesional = Depends(get_mi_profesional),
 ) -> list[ExcepcionResponse]:
     """Listar mis excepciones (Profesional)."""
     service = DisponibilidadService(session)
-    return await service.obtener_excepciones(current_user.id, desde, hasta)
+    return await service.obtener_excepciones(profesional.id, desde, hasta)
 
 
 @router.post(
@@ -234,12 +246,12 @@ async def obtener_excepciones(
 async def agregar_excepcion(
     data: ExcepcionCreate,
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_proveedor),
+    profesional: Profesional = Depends(get_mi_profesional),
 ) -> ExcepcionResponse:
     """Crear excepción (Profesional)."""
     service = DisponibilidadService(session)
     try:
-        return await service.agregar_excepcion(current_user.id, data)
+        return await service.agregar_excepcion(profesional.id, data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from None
 
@@ -253,11 +265,11 @@ async def agregar_excepcion(
 async def eliminar_excepcion(
     excepcion_id: int = Path(..., ge=1, description="ID de la excepción"),
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_proveedor),
+    profesional: Profesional = Depends(get_mi_profesional),
 ) -> None:
     """Eliminar excepción (Profesional)."""
     service = DisponibilidadService(session)
-    success = await service.eliminar_excepcion(current_user.id, excepcion_id)
+    success = await service.eliminar_excepcion(profesional.id, excepcion_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Excepción no encontrada")
 
@@ -278,6 +290,8 @@ async def listar_mis_turnos(
     hasta: date | None = Query(None, description="Fecha hasta (inclusive)"),
     page: int = Query(1, ge=1, description="Número de página"),
     size: int = Query(20, ge=1, le=100, description="Tamaño de página"),
+    servicio_id: int | None = Query(None, ge=1, description="Filtrar por servicio"),
+    cliente: str | None = Query(None, min_length=1, max_length=100, description="Buscar por nombre de cliente"),
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_proveedor),
 ) -> TurnoListResponse:
@@ -291,7 +305,9 @@ async def listar_mis_turnos(
             detail="Perfil profesional no encontrado"
         )
 
-    filtros = TurnoFiltros(estado=estado, desde=desde, hasta=hasta, page=page, size=size)
+    filtros = TurnoFiltros(
+        estado=estado, desde=desde, hasta=hasta, page=page, size=size, servicio_id=servicio_id, cliente=cliente
+    )
     service = TurnoService(session)
     turnos, total = await service.get_turnos_by_profesional(profesional.id, filtros)
 

@@ -210,3 +210,20 @@ class TestReservaFueraDeHorario:
             BASE, json=_reserva(sample_profesional.id, sample_servicio.id, hora="09:10"), headers=auth_headers
         )
         assert response.status_code == 422
+
+
+class TestDatosLegibles:
+    async def test_mis_turnos_incluye_nombres(self, async_client, auth_headers, sample_turno, test_user):
+        item = (await async_client.get(f"{BASE}/mis-turnos", headers=auth_headers)).json()["items"][0]
+        assert item["servicio_nombre"] == "Corte"
+        assert item["profesional_nombre"] == "Juan Perez"
+        assert item["cliente_nombre"] == "Test User"
+
+    async def test_reserva_recien_creada_incluye_nombres(
+        self, async_client, auth_headers, sample_profesional, sample_servicio
+    ):
+        response = await async_client.post(
+            BASE, json=_reserva(sample_profesional.id, sample_servicio.id), headers=auth_headers
+        )
+        assert response.status_code == 201
+        assert response.json()["servicio_nombre"] == "Corte"
