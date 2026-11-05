@@ -176,7 +176,7 @@ class ApiClient {
 
   // Profesional - Mi Perfil
   async getMiPerfil() {
-    const response = await this.client.get<import('../types').Profesional>('/profesionales/me');
+    const response = await this.client.get<import('../types').MiPerfil>('/profesionales/me');
     return response.data;
   }
 
@@ -210,7 +210,7 @@ class ApiClient {
   }
 
   async actualizarGrillaCompleta(grilla: import('../types').DisponibilidadCreate[]) {
-    const response = await this.client.put<{ grilla: import('../types').Disponibilidad[] }>('/profesionales/me/disponibilidad', grilla);
+    const response = await this.client.put<import('../types').GrillaProfesional>('/profesionales/me/disponibilidad', grilla);
     return response.data;
   }
 

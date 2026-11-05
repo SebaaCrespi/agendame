@@ -76,10 +76,31 @@ class ProfesionalService:
             pages=pages
         )
 
+    async def _validar_baja(self, profesional_id: int) -> bool:
+        """
+        Regla de baja (CU-10): no se desactiva un profesional con turnos activos sin terminar.
+
+        Devuelve False si el profesional no existe; ValueError si tiene turnos pendientes.
+        """
+        result = await self.repo.get_with_turnos_count(profesional_id)
+        if not result:
+            return False
+        turnos_futuros = result["turnos_futuros"]
+        if isinstance(turnos_futuros, int) and turnos_futuros > 0:
+            plural = "turno pendiente" if turnos_futuros == 1 else "turnos pendientes"
+            raise ValueError(
+                f"No se puede desactivar: tiene {turnos_futuros} {plural}. Reasignalos o cancelalos primero."
+            )
+        return True
+
     async def actualizar_profesional(
         self, profesional_id: int, data: ProfesionalUpdate
     ) -> Profesional | None:
-        """Update profesional (Admin)."""
+        """Update profesional (Admin). Desactivar por acá aplica la misma regla que el DELETE."""
+        if data.activo is False:
+            actual = await self.repo.get_by_id(profesional_id)
+            if actual and actual.activo and not await self._validar_baja(profesional_id):
+                return None
         profesional = await self.repo.update(profesional_id, data)
         if profesional:
             await self.session.commit()
@@ -88,16 +109,8 @@ class ProfesionalService:
 
     async def desactivar_profesional(self, profesional_id: int) -> bool:
         """Soft delete profesional with validation of future turnos (Admin)."""
-        # Check for future turnos
-        result = await self.repo.get_with_turnos_count(profesional_id)
-        if not result:
+        if not await self._validar_baja(profesional_id):
             return False
-
-        turnos_futuros = result["turnos_futuros"]
-        if isinstance(turnos_futuros, int) and turnos_futuros > 0:
-            raise ValueError(
-                f"No se puede desactivar: tiene {turnos_futuros} turnos futuros confirmados"
-            )
 
         success = await self.repo.soft_delete(profesional_id)
         if success:

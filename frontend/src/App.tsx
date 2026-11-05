@@ -8,6 +8,12 @@ import { ClienteDashboard } from '@/pages/cliente/DashboardPage';
 import { ProfesionalDashboard } from '@/pages/profesional/DashboardPage';
 import { ProfesionalTurnosPage } from '@/pages/profesional/TurnosPage';
 import { ProfesionalHistorialPage } from '@/pages/profesional/HistorialPage';
+import { ProfesionalPerfilPage } from '@/pages/profesional/PerfilPage';
+import { ProfesionalServiciosPage } from '@/pages/profesional/ServiciosPage';
+import { ProfesionalDisponibilidadPage } from '@/pages/profesional/DisponibilidadPage';
+import { AdminDashboardPage } from '@/pages/admin/DashboardPage';
+import { AdminProfesionalesPage } from '@/pages/admin/ProfesionalesPage';
+import { AdminTurnosPage } from '@/pages/admin/TurnosPage';
 
 const HOME_POR_ROL = {
   CLIENTE: '/cliente/dashboard',
@@ -89,9 +95,9 @@ function AppRoutes() {
         <Route path="dashboard" element={<ProfesionalDashboard />} />
         <Route path="turnos" element={<ProfesionalTurnosPage />} />
         <Route path="historial" element={<ProfesionalHistorialPage />} />
-        <Route path="perfil" element={<div>Mi Perfil - Próximamente</div>} />
-        <Route path="servicios" element={<div>Servicios - Próximamente</div>} />
-        <Route path="disponibilidad" element={<div>Disponibilidad - Próximamente</div>} />
+        <Route path="perfil" element={<ProfesionalPerfilPage />} />
+        <Route path="servicios" element={<ProfesionalServiciosPage />} />
+        <Route path="disponibilidad" element={<ProfesionalDisponibilidadPage />} />
       </Route>
 
       {/* Protected routes - Admin */}
@@ -104,9 +110,9 @@ function AppRoutes() {
         }
       >
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="dashboard" element={<div>Admin Dashboard - Próximamente</div>} />
-        <Route path="turnos" element={<div>Todos los Turnos - Próximamente</div>} />
-        <Route path="profesionales" element={<div>Profesionales - Próximamente</div>} />
+        <Route path="dashboard" element={<AdminDashboardPage />} />
+        <Route path="turnos" element={<AdminTurnosPage />} />
+        <Route path="profesionales" element={<AdminProfesionalesPage />} />
       </Route>
 
       {/* Default redirect */}

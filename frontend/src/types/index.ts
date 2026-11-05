@@ -42,15 +42,20 @@ export interface Servicio {
   nombre: string;
   descripcion: string | null;
   duracion_min: number;
-  precio: number;
+  precio: number; // centavos
+  orden: number;
   activo: boolean;
   profesional_id: number;
 }
 
+export type DiaSemana = 'LUNES' | 'MARTES' | 'MIERCOLES' | 'JUEVES' | 'VIERNES' | 'SABADO' | 'DOMINGO';
+
 export interface Disponibilidad {
-  dia_semana: number; // 0-6 (Lunes-Domingo)
+  id: number;
+  dia_semana: DiaSemana;
   hora_inicio: string; // HH:MM:SS
   hora_fin: string; // HH:MM:SS
+  activo: boolean;
 }
 
 export interface ExcepcionDisponibilidad {
@@ -62,17 +67,27 @@ export interface ExcepcionDisponibilidad {
   motivo?: string;
 }
 
+/** Profesional como lo devuelven /admin/profesionales y /profesionales/me. */
 export interface Profesional {
   id: number;
   user_id: number;
+  email: string;
   nombre: string;
   apellido: string;
+  telefono: string | null;
   bio: string | null;
   foto_url: string | null;
   slot_duracion_min: number;
   activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** GET /profesionales/me: perfil con servicios, grilla y excepciones. */
+export interface MiPerfil {
+  profesional: Profesional;
   servicios: Servicio[];
-  disponibilidad: Disponibilidad[];
+  disponibilidad: GrillaProfesional;
   excepciones: ExcepcionDisponibilidad[];
 }
 
@@ -109,15 +124,16 @@ export interface ProfesionalCreate {
   password: string;
   nombre: string;
   apellido: string;
+  telefono?: string;
   bio?: string;
   foto_url?: string;
   slot_duracion_min?: number;
-  servicios: { nombre: string; descripcion?: string; duracion_min: number; precio: number }[];
 }
 
 export interface ProfesionalUpdate {
   nombre?: string;
   apellido?: string;
+  telefono?: string | null;
   bio?: string;
   foto_url?: string;
   slot_duracion_min?: number;
@@ -129,6 +145,7 @@ export interface ServicioCreate {
   descripcion?: string;
   duracion_min: number;
   precio: number;
+  orden?: number;
 }
 
 export interface ServicioUpdate {
@@ -136,11 +153,12 @@ export interface ServicioUpdate {
   descripcion?: string;
   duracion_min?: number;
   precio?: number;
+  orden?: number;
   activo?: boolean;
 }
 
 export interface DisponibilidadCreate {
-  dia_semana: number;
+  dia_semana: DiaSemana;
   hora_inicio: string;
   hora_fin: string;
 }
@@ -232,7 +250,7 @@ export interface TurnoFiltrosProfesional extends TurnoFiltros {
 export interface GrillaProfesional {
   profesional_id: number;
   slot_duracion_min: number;
-  grilla: { id: number; dia_semana: string; hora_inicio: string; hora_fin: string; activo: boolean }[];
+  grilla: Disponibilidad[];
 }
 
 export interface TurnoListResponse {

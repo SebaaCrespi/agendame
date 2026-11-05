@@ -59,6 +59,20 @@ class TurnoRepo:
         orden = Turno.fecha_inicio.desc() if orden_default == "desc" else Turno.fecha_inicio.asc()
         return stmt.order_by(orden)
 
+    async def get_activos_futuros(self, profesional_id: int) -> list[Turno]:
+        """Turnos PENDIENTE/CONFIRMADO/EN_CURSO del profesional que todavía no terminaron."""
+        stmt = (
+            select(Turno)
+            .where(
+                Turno.profesional_id == profesional_id,
+                Turno.estado.in_([TurnoEstado.PENDIENTE, TurnoEstado.CONFIRMADO, TurnoEstado.EN_CURSO]),
+                Turno.fecha_fin > ahora_negocio(),
+            )
+            .order_by(Turno.fecha_inicio.asc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_by_cliente(
         self, cliente_id: int, filtros: TurnoFiltros
     ) -> tuple[list[Turno], int]:

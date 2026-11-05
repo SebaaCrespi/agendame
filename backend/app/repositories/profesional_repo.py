@@ -160,11 +160,13 @@ class ProfesionalRepo:
         if not profesional:
             return None
 
-        # Count future turnos (CONFIRMADO, PENDIENTE, EN_CURSO)
+        from app.core.timeutils import ahora_negocio
+
+        # Turnos activos que todavía no terminaron (hora del negocio)
         stmt = select(func.count(Turno.id)).where(
             Turno.profesional_id == profesional_id,
             Turno.estado.in_([TurnoEstado.CONFIRMADO, TurnoEstado.PENDIENTE, TurnoEstado.EN_CURSO]),
-            Turno.fecha_inicio >= func.date(func.now())
+            Turno.fecha_fin > ahora_negocio(),
         )
         result = await self.session.execute(stmt)
         turnos_futuros = result.scalar_one()

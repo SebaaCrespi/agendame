@@ -95,7 +95,10 @@ async def actualizar_profesional(
 ) -> ProfesionalResponse:
     """Actualizar profesional (Admin)."""
     service = ProfesionalService(session)
-    profesional = await service.actualizar_profesional(profesional_id, data)
+    try:
+        profesional = await service.actualizar_profesional(profesional_id, data)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from None
     if not profesional:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profesional no encontrado")
     return ProfesionalResponse.model_validate(profesional)
