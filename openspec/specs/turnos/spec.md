@@ -438,3 +438,14 @@ El proveedor SHALL tener una página de historial con sus turnos paginados, filt
 #### Scenario: Historial de varias semanas
 - **WHEN** el proveedor filtra del 1 al 31 del mes con el servicio Corte
 - **THEN** ve solo los turnos de Corte de ese mes, paginados
+
+### Requirement: Turnos de todos los profesionales para el administrador
+La aplicación SHALL permitir al administrador consultar, en solo lectura, los turnos de todos los profesionales en una lista paginada, filtrable por profesional, estado y rango de fechas, mostrando fecha y hora, profesional, cliente, servicio y estado.
+
+#### Scenario: Filtrar por profesional
+- **WHEN** el admin elige a Juan Pérez en el filtro
+- **THEN** ve solo los turnos de Juan, paginados
+
+#### Scenario: Sin acciones
+- **WHEN** el admin ve un turno confirmado
+- **THEN** la lista no ofrece cancelar, reasignar ni cambiar el estado
