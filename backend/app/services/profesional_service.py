@@ -93,6 +93,11 @@ class ProfesionalService:
             )
         return True
 
+    async def listar_activos(self, q: str | None = None, limite: int = 50) -> list[Profesional]:
+        """Profesionales activos, opcionalmente filtrados por nombre (listado público y chatbot)."""
+        items, _ = await self.repo.list_paginated(PageParams(page=1, size=limite), FilterParams(q=q, activo=True))
+        return list(items)
+
     async def actualizar_profesional(
         self, profesional_id: int, data: ProfesionalUpdate
     ) -> Profesional | None:

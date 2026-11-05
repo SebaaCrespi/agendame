@@ -12,6 +12,7 @@ from app.api.deps import limiter
 from app.api.v1 import (
     auth_router,
     chat_router,
+    chatbot_router,
     profesionales_admin_router,
     profesionales_me_router,
     profesionales_public_router,
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
     app.include_router(turnos_router, prefix="/api/v1")
     app.include_router(turnos_admin_router, prefix="/api/v1")
     app.include_router(chat_router, prefix="/api/v1")
+    app.include_router(chatbot_router, prefix="/api/v1")
 
     # Health check endpoint
     @app.get(

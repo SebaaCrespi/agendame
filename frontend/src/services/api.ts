@@ -292,6 +292,12 @@ class ApiClient {
     return response.data;
   }
 
+  // Chatbot (CU-05/06)
+  async enviarMensajeChat(mensaje: string, session_id: string | null) {
+    const response = await this.client.post<import('../types').ChatMessageResponse>('/chat/message', { mensaje, session_id });
+    return response.data;
+  }
+
   // Admin - Turnos
   async getAllTurnosAdmin(params: {
     page?: number;

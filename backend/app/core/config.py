@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -39,11 +40,20 @@ class Settings(BaseSettings):
         description="Allowed CORS origins",
     )
 
-    # Groq API (Chatbot IA)
-    GROQ_API_KEY: str = Field(default="", description="Groq API key for LLM")
-    CHAT_MODEL: str = Field(
-        default="llama-3.3-70b-versatile", description="Groq chat model name"
+    # Chatbot IA (CU-05/06): proveedor y modelo configurables
+    CHAT_PROVIDER: Literal["groq", "nvidia", "ollama"] = Field(
+        default="groq", description="Proveedor del modelo de lenguaje"
     )
+    CHAT_MODEL: str = Field(
+        default="llama-3.3-70b-versatile", description="Modelo del proveedor elegido"
+    )
+    GROQ_API_KEY: str = Field(default="", description="Groq API key")
+    NVIDIA_API_KEY: str = Field(default="", description="NVIDIA API key (build.nvidia.com)")
+    OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", description="URL de Ollama local")
+    CHAT_TEMPERATURE: float = Field(default=0.1, ge=0, le=1)
+    CHAT_TIMEOUT_S: float = Field(default=20, gt=0, description="Timeout por llamada al modelo")
+    CHAT_MAX_HISTORY: int = Field(default=10, ge=2, le=50, description="Mensajes recordados por conversación")
+    CHAT_SESSION_TTL: int = Field(default=3600, ge=60, description="Segundos sin uso hasta que vence la conversación")
 
     # Internal API Key (for chatbot service)
     INTERNAL_API_KEY: str = Field(

@@ -1,7 +1,7 @@
 """Integration tests for the internal chatbot endpoint (/internal/turnos/reservar).
 
-The conversational chatbot (LangChain + Groq, CU-05/CU-06) is not implemented
-yet; these tests only cover the internal booking API it will use.
+The conversational endpoint (/chat/message, CU-05/CU-06) is covered in
+test_chat_message.py; these tests only cover the internal booking API.
 """
 
 from tests.conftest import proximo_dia_habil

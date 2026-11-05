@@ -80,6 +80,16 @@ async def get_current_user(
         ) from e
 
 
+async def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+    session: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Usuario autenticado, o None si no se envió token (un token inválido sigue dando 401)."""
+    if credentials is None:
+        return None
+    return await get_current_user(credentials, session)
+
+
 def require_roles(*allowed_roles: UserRole) -> Callable[[User], Coroutine[Any, Any, User]]:
     """Dependency that checks if current user has one of the allowed roles.
 

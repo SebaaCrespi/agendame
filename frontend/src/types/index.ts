@@ -340,3 +340,11 @@ export interface FilterParams {
   q?: string;
   activo?: boolean;
 }
+
+// Chatbot (CU-05/06)
+export interface ChatMessageResponse {
+  respuesta: string;
+  session_id: string;
+  /** Cambios hechos por el asistente: turno_reservado, turno_cancelado */
+  acciones: string[];
+}

@@ -6,6 +6,7 @@ import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { MisTurnosCliente } from '@/components/turnos/MisTurnosCliente';
+import { ChatWidget } from '@/components/chat/ChatWidget';
 import { cn } from '@/utils/cn';
 import { Calendar, Clock, User, Scissors, CheckCircle, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ProfesionalPublic, ServicioPublic, DisponibilidadResponse, SlotDisponible } from '@/types';
@@ -16,6 +17,8 @@ const formatPrecio = (centavos: number) =>
 export function ClienteDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'reservar' | 'mis-turnos'>('reservar');
+  // Cambia cuando el asistente reserva o cancela: remonta "Mis turnos" para recargarlo
+  const [versionTurnos, setVersionTurnos] = useState(0);
 
   // Reservar state
   const [profesionales, setProfesionales] = useState<ProfesionalPublic[]>([]);
@@ -401,10 +404,11 @@ export function ClienteDashboard() {
             <CardDescription>Tus próximas citas y tu historial</CardDescription>
           </CardHeader>
           <CardContent>
-            <MisTurnosCliente onReservar={() => setActiveTab('reservar')} />
+            <MisTurnosCliente key={versionTurnos} onReservar={() => setActiveTab('reservar')} />
           </CardContent>
         </Card>
       )}
+      <ChatWidget onCambioTurnos={() => setVersionTurnos((v) => v + 1)} />
     </div>
   );
 }
