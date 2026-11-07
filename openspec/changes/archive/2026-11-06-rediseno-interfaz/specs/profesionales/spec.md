@@ -1,6 +1,6 @@
 # Spec Delta: profesionales (catálogo público)
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Listado público de profesionales sin sesión
 Los endpoints públicos de `/profesionales` (listado, detalle, servicios, grilla, excepciones y slots) SHALL responder sin sesión. Siguen devolviendo solo profesionales activos y sin datos de contacto privados.

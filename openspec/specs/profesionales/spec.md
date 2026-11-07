@@ -259,3 +259,10 @@ La aplicación SHALL permitir al administrador listar los profesionales (paginad
 #### Scenario: Grillas independientes
 - **WHEN** el admin crea un profesional nuevo
 - **THEN** el profesional empieza sin servicios ni grilla y no ve los de otros profesionales
+
+### Requirement: Listado público de profesionales sin sesión
+Los endpoints públicos de `/profesionales` (listado, detalle, servicios, grilla, excepciones y slots) SHALL responder sin sesión. Siguen devolviendo solo profesionales activos y sin datos de contacto privados.
+
+#### Scenario: Visitante ve profesionales
+- **WHEN** un visitante sin token pide `GET /profesionales`
+- **THEN** el sistema responde 200 con los profesionales activos y sus servicios activos
