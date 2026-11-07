@@ -3,7 +3,8 @@
 import axios, { type AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { TokenResponse } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// En Docker se compila con VITE_API_URL="" para usar el mismo origen (/api)
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 class ApiClient {
   private client: AxiosInstance;

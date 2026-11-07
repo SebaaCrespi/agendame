@@ -3,6 +3,9 @@
 Uso (desde backend/):
     python scripts/seed_dev.py
 
+En Docker corre solo al levantar el backend (SEED_DEMO=true). Para correrlo a mano:
+    docker compose exec backend python scripts/seed_dev.py
+
 Credenciales de prueba (solo desarrollo local):
     admin@agendame.com    / Admin12345   (ADMIN)
     juan@agendame.com     / Prof12345    (PROVEEDOR) - Juan Pérez, lun-sáb 09:00-18:00
@@ -11,7 +14,7 @@ Credenciales de prueba (solo desarrollo local):
     ana@agendame.com      / Cliente12345 (CLIENTE) - Ana López
     beto@agendame.com     / Cliente12345 (CLIENTE) - Beto Ruiz
 
-También crea turnos de ejemplo para Juan en la semana actual (creado_por="seed"),
+También crea turnos de ejemplo para Juan en la semana actual y la siguiente (creado_por="seed"),
 salteando los horarios que ya estén ocupados.
 
 Además crea el perfil Cliente que falte a usuarios CLIENTE registrados antes
@@ -83,7 +86,19 @@ TURNOS_JUAN = [
 ]
 
 
-async def seed_turnos_juan(session: AsyncSession) -> None:
+# Semana siguiente: así siempre hay turnos próximos para ver, se corra el día que se corra
+TURNOS_JUAN_PROXIMA = [
+    (0, 10, 0, "ana@agendame.com", 0, TurnoEstado.CONFIRMADO),
+    (1, 11, 0, "cliente@agendame.com", 1, TurnoEstado.CONFIRMADO),
+    (2, 15, 30, "beto@agendame.com", 0, TurnoEstado.CONFIRMADO),
+    (3, 9, 0, "cliente@agendame.com", 0, TurnoEstado.CONFIRMADO),
+    (4, 17, 0, "ana@agendame.com", 1, TurnoEstado.CONFIRMADO),
+]
+
+
+async def seed_turnos_juan(
+    session: AsyncSession, semanas_adelante: int = 0, turnos: list[tuple] | None = None
+) -> None:
     juan_user = await UserRepo(session).get_by_email("juan@agendame.com")
     if juan_user is None:
         return
@@ -91,7 +106,7 @@ async def seed_turnos_juan(session: AsyncSession) -> None:
     if juan is None:
         return
     hoy = ahora_negocio().date()
-    lunes = hoy - timedelta(days=hoy.weekday())
+    lunes = hoy - timedelta(days=hoy.weekday()) + timedelta(weeks=semanas_adelante)
     desde = datetime.combine(lunes, time.min, tzinfo=UTC)
     hasta = desde + timedelta(days=7)
     existentes = list(
@@ -104,7 +119,7 @@ async def seed_turnos_juan(session: AsyncSession) -> None:
     if any(t.creado_por == "seed" for t in existentes):
         return  # ya sembrado esta semana
     servicios = sorted(juan.servicios, key=lambda s: s.orden)
-    for dia, h, m, email, i_serv, estado in TURNOS_JUAN:
+    for dia, h, m, email, i_serv, estado in turnos or TURNOS_JUAN:
         user = await UserRepo(session).get_by_email(email)
         cliente = await session.scalar(select(Cliente).where(Cliente.user_id == user.id)) if user else None
         if cliente is None:
@@ -169,6 +184,7 @@ async def seed() -> None:
         await get_or_create_user(session, "beto@agendame.com", "Cliente12345", "Beto Ruiz", UserRole.CLIENTE)
         await session.flush()
         await seed_turnos_juan(session)
+        await seed_turnos_juan(session, semanas_adelante=1, turnos=TURNOS_JUAN_PROXIMA)
 
         # Backfill: usuarios CLIENTE sin perfil Cliente
         sin_perfil = await session.scalars(
