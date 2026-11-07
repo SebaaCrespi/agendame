@@ -79,7 +79,7 @@ JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Groq / Chatbot
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxx
-CHAT_MODEL=llama-3.3-70b-versatile
+CHAT_MODEL=openai/gpt-oss-120b
 CHAT_TEMPERATURE=0.1
 
 # Frontend (Vite)

@@ -3,7 +3,7 @@ Compara modelos para el chatbot (CU-05/06) con conversaciones guionadas.
 
 Uso (desde backend/):
     python scripts/comparar_modelos.py
-    python scripts/comparar_modelos.py groq:llama-3.3-70b-versatile nvidia:openai/gpt-oss-20b
+    python scripts/comparar_modelos.py groq:openai/gpt-oss-120b nvidia:openai/gpt-oss-20b
 
 Corre sobre una COPIA temporal de agendame.db (no toca la DB de desarrollo) y solo
 prueba los proveedores que tengan key en el .env. Necesita los datos del seed
@@ -42,8 +42,8 @@ from app.services.chatbot_service import (  # noqa: E402
 )
 
 MODELOS_POR_DEFECTO = [
-    "groq:llama-3.3-70b-versatile",
-    "groq:llama-3.1-8b-instant",
+    "groq:openai/gpt-oss-120b",
+    "groq:openai/gpt-oss-20b",
     "nvidia:openai/gpt-oss-20b",
     "nvidia:deepseek-ai/deepseek-v4.1-flash",
     "nvidia:nvidia/nemotron-3.5-lightning-30b-a3b",

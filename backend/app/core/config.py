@@ -45,7 +45,7 @@ class Settings(BaseSettings):
         default="groq", description="Proveedor del modelo de lenguaje"
     )
     CHAT_MODEL: str = Field(
-        default="llama-3.3-70b-versatile", description="Modelo del proveedor elegido"
+        default="openai/gpt-oss-120b", description="Modelo del proveedor elegido"
     )
     GROQ_API_KEY: str = Field(default="", description="Groq API key")
     NVIDIA_API_KEY: str = Field(default="", description="NVIDIA API key (build.nvidia.com)")

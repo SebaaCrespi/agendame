@@ -165,7 +165,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=1440
 REFRESH_TOKEN_EXPIRE_DAYS=7
 # Chatbot (CU-05/06): proveedor groq | nvidia | ollama
 CHAT_PROVIDER=groq
-CHAT_MODEL=llama-3.3-70b-versatile
+CHAT_MODEL=openai/gpt-oss-120b
 GROQ_API_KEY=tu-groq-key
 NVIDIA_API_KEY=
 OLLAMA_BASE_URL=http://localhost:11434

@@ -7,7 +7,13 @@ import pytest
 
 from app.core import timeutils
 from app.models.turno import Turno, TurnoEstado
-from app.services.chat_tools import ACCION_CANCELACION, ACCION_RESERVA, SIN_SESION, crear_herramientas
+from app.services.chat_tools import (
+    ACCION_CANCELACION,
+    ACCION_RESERVA,
+    SIN_SESION,
+    crear_herramientas,
+    fecha_texto,
+)
 
 # 15:00 UTC = 12:00 en Buenos Aires del lunes 09/11/2026
 AHORA = datetime(2026, 11, 9, 15, 0, tzinfo=UTC)
@@ -47,7 +53,8 @@ class TestConsultarDisponibilidad:
                 {"profesional_id": sample_profesional.id, "servicio_id": sample_servicio.id, "desde": MANANA.isoformat()}
             )
         )
-        horas = datos[MANANA.isoformat()]
+        assert datos[MANANA.isoformat()]["dia"] == "martes 10 de noviembre"
+        horas = datos[MANANA.isoformat()]["horas"]
         assert horas[0] == "09:00"
         assert "10:00" not in horas
         assert "10:30" in horas
@@ -78,6 +85,7 @@ class TestReservar:
         turno = await db_session.get(Turno, datos["turno_id"])
         assert turno is not None and turno.cliente_id == sample_cliente.id
         assert datos["hora_inicio"] == "11:00" and datos["estado"] == "CONFIRMADO"
+        assert datos["dia"] == "martes 10 de noviembre"
         assert acciones == [ACCION_RESERVA]
 
     async def test_sin_sesion(self, db_session, sample_profesional, sample_servicio):
@@ -111,6 +119,22 @@ class TestMisTurnosYCancelar:
         datos = json.loads(await tools["cancelar_turno"].ainvoke({"turno_id": turno.id, "motivo": "Viaje"}))
         assert datos["estado"] == TurnoEstado.CANCELADO_CLIENTE.value
         assert acciones == [ACCION_CANCELACION]
+
+    async def test_cancelar_sin_motivo(self, db_session, sample_profesional, sample_servicio, sample_cliente, make_turno):
+        turno = await make_turno(sample_cliente, sample_profesional, sample_servicio, inicio=datetime(2026, 11, 11, 10, 0, tzinfo=UTC))
+        tools, _ = _herramientas(db_session, sample_cliente.id)
+        datos = json.loads(await tools["cancelar_turno"].ainvoke({"turno_id": turno.id}))
+        assert datos["estado"] == TurnoEstado.CANCELADO_CLIENTE.value
+        cancelado = await db_session.get(Turno, turno.id)
+        assert cancelado is not None and cancelado.motivo_cancelacion == "Cancelado desde el chat"
+
+
+class TestFechaTexto:
+    def test_mismo_anio(self):
+        assert fecha_texto(date(2026, 11, 7), anio_actual=2026) == "sábado 7 de noviembre"
+
+    def test_otro_anio(self):
+        assert fecha_texto(date(2027, 1, 5), anio_actual=2026) == "martes 5 de enero de 2027"
 
     async def test_cancelar_sobre_la_hora(self, db_session, sample_profesional, sample_servicio, sample_cliente, make_turno):
         # empieza 13:00 local, falta 1 h

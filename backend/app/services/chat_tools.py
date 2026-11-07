@@ -15,6 +15,7 @@ from langchain_core.tools import BaseTool, tool
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException
+from app.core.timeutils import ahora_negocio
 from app.schemas.turno import MomentoTurno, TurnoFiltros
 from app.services.profesional_service import ProfesionalService
 from app.services.turno_service import TurnoService
@@ -27,9 +28,22 @@ SIN_SESION = "Necesitás iniciar sesión como cliente para eso. Podés hacerlo d
 ACCION_RESERVA = "turno_reservado"
 ACCION_CANCELACION = "turno_cancelado"
 
+DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+MESES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]
+
 
 def hhmm(t: time) -> str:
     return t.strftime("%H:%M")
+
+
+def fecha_texto(d: date, anio_actual: int | None = None) -> str:
+    """'sábado 7 de noviembre' para mostrarle al cliente; agrega el año si no es el actual."""
+    anio_actual = ahora_negocio().year if anio_actual is None else anio_actual
+    texto = f"{DIAS[d.weekday()]} {d.day} de {MESES[d.month - 1]}"
+    return texto if d.year == anio_actual else f"{texto} de {d.year}"
 
 
 def _json(data: Any) -> str:
@@ -91,7 +105,7 @@ def crear_herramientas(session: AsyncSession, cliente_id: int | None, acciones: 
 
     @tool
     async def consultar_disponibilidad(profesional_id: int, servicio_id: int, desde: str, hasta: str | None = None) -> str:
-        """Horarios libres de un profesional para un servicio. `desde` y `hasta` en formato AAAA-MM-DD (hasta 14 días; si no se indica `hasta`, es el mismo día). Devuelve, por fecha, las horas de inicio libres en formato HH:MM."""
+        """Horarios libres de un profesional para un servicio. `desde` y `hasta` en formato AAAA-MM-DD (hasta 14 días; si no se indica `hasta`, es el mismo día). Devuelve, por fecha AAAA-MM-DD, el día escrito para mostrarle al cliente (`dia`) y las horas de inicio libres en formato HH:MM (`horas`)."""
 
         async def fn() -> str:
             inicio = _fecha(desde)
@@ -110,7 +124,7 @@ def crear_herramientas(session: AsyncSession, cliente_id: int | None, acciones: 
             libres = {f: h for f, h in libres.items() if h}
             if not libres:
                 return "No hay horarios libres en esas fechas (puede que no atienda esos días o que esté todo ocupado)."
-            return _json(libres)
+            return _json({str(f): {"dia": fecha_texto(_fecha(str(f))), "horas": h} for f, h in libres.items()})
 
         return await _ejecutar("consultar_disponibilidad", fn)
 
@@ -131,6 +145,7 @@ def crear_herramientas(session: AsyncSession, cliente_id: int | None, acciones: 
                     "profesional": t.profesional_nombre,
                     "servicio": t.servicio_nombre,
                     "fecha": t.fecha_inicio.date().isoformat(),
+                    "dia": fecha_texto(t.fecha_inicio.date()),
                     "hora_inicio": hhmm(t.fecha_inicio.time()),
                     "hora_fin": hhmm(t.fecha_fin.time()),
                 }
@@ -155,6 +170,7 @@ def crear_herramientas(session: AsyncSession, cliente_id: int | None, acciones: 
                     {
                         "turno_id": t.id,
                         "fecha": t.fecha_inicio.date().isoformat(),
+                        "dia": fecha_texto(t.fecha_inicio.date()),
                         "hora": hhmm(t.fecha_inicio.time()),
                         "profesional": t.profesional_nombre,
                         "servicio": t.servicio_nombre,
@@ -167,8 +183,8 @@ def crear_herramientas(session: AsyncSession, cliente_id: int | None, acciones: 
         return await _ejecutar("mis_turnos", fn)
 
     @tool
-    async def cancelar_turno(turno_id: int, motivo: str) -> str:
-        """Cancela un turno del cliente de la sesión. Usar SOLO después de que el cliente confirmó cuál y el motivo. Solo se puede con más de 2 horas de antelación."""
+    async def cancelar_turno(turno_id: int, motivo: str = "") -> str:
+        """Cancela un turno del cliente de la sesión. Usar SOLO después de mostrarle al cliente qué turno se va a cancelar y de que responda que sí en un mensaje posterior. `motivo`: si en algún mensaje de la conversación el cliente dijo por qué cancela, pasalo SIEMPRE con sus palabras (por ejemplo "no voy a poder ir"); si no dijo nada, dejalo vacío y no se lo pidas. Solo se puede con más de 2 horas de antelación."""
         if cliente_id is None:
             return SIN_SESION
 
@@ -186,5 +202,4 @@ def crear_herramientas(session: AsyncSession, cliente_id: int | None, acciones: 
 
 def hoy_texto(ahora: datetime) -> str:
     """'jueves 2026-11-05' para el system prompt."""
-    dias = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
-    return f"{dias[ahora.weekday()]} {ahora.date().isoformat()}"
+    return f"{DIAS[ahora.weekday()]} {ahora.date().isoformat()}"

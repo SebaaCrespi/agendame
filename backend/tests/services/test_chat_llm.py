@@ -12,7 +12,7 @@ def _settings(**valores) -> Settings:
 
 
 def test_groq():
-    llm = crear_llm(_settings(CHAT_PROVIDER="groq", GROQ_API_KEY="gsk_" + "a" * 40, CHAT_MODEL="llama-3.3-70b-versatile"))
+    llm = crear_llm(_settings(CHAT_PROVIDER="groq", GROQ_API_KEY="gsk_" + "a" * 40, CHAT_MODEL="openai/gpt-oss-120b"))
     assert type(llm).__name__ == "ChatGroq"
 
 

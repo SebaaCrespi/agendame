@@ -11,7 +11,7 @@ Usuario (Frontend Chat)
     ↓ WebSocket / REST
 Backend FastAPI (Chatbot Service)
     ↓ LangChain Agent (ReAct / OpenAI Functions)
-Groq API (LLM: llama-3.3-70b-versatile / mixtral-8x7b)
+Groq API (LLM: openai/gpt-oss-120b)
     ↓ Tool Calling
 Backend Internal APIs (Profesionales, Turnos, Disponibilidad)
 ```
@@ -151,7 +151,7 @@ ChatSession:
 
 ```python
 # LLM Config
-model = "llama-3.3-70b-versatile"  # o "mixtral-8x7b-32768"
+model = "openai/gpt-oss-120b"  # o "openai/gpt-oss-20b" / "qwen/qwen3.8-27b"
 temperature = 0.1  # determinista para tool calling
 max_tokens = 1024
 
@@ -164,7 +164,7 @@ agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, max_itera
 
 ```env
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxx
-CHAT_MODEL=llama-3.3-70b-versatile
+CHAT_MODEL=openai/gpt-oss-120b
 CHAT_TEMPERATURE=0.1
 CHAT_MAX_HISTORY=10
 CHAT_SESSION_TTL=3600  # segundos

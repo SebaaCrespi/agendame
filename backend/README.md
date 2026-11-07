@@ -49,7 +49,7 @@ uvicorn app.main:app --reload
 | `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token expiration | `7` |
 | `CORS_ORIGINS` | Allowed CORS origins | `["http://localhost:5173"]` |
 | `GROQ_API_KEY` | Groq API key for chatbot | - |
-| `CHAT_MODEL` | Groq model name | `llama-3.3-70b-versatile` |
+| `CHAT_MODEL` | Groq model name | `openai/gpt-oss-120b` |
 | `RATE_LIMIT_REQUESTS` | Max requests per window | `5` |
 | `RATE_LIMIT_WINDOW_SECONDS` | Rate limit window | `60` |
 

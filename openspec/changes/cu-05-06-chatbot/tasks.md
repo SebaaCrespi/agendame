@@ -24,7 +24,7 @@
 
 ## 6. Verificación end-to-end
 
-- [ ] 6.1 Con una key real de Groq: en el navegador, como cliente, consultar horarios de Juan para mañana, reservar con confirmación, ver el turno en "Mis turnos", pedir cancelarlo y confirmar; preguntar por un profesional inexistente. Revisar el chat a 375 px. Verificar: capturas
+- [x] 6.1 Con una key real de Groq: en el navegador, como cliente, consultar horarios de Juan para mañana, reservar con confirmación, ver el turno en "Mis turnos", pedir cancelarlo y confirmar; preguntar por un profesional inexistente. Revisar el chat a 375 px. Verificar: capturas
 - [x] 6.2 Suite completa en verde y `ruff check app/` limpio. Verificar: `pytest` y `ruff check app/`
 
 ## Workflow follow-up
