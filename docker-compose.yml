@@ -1,0 +1,33 @@
+# Agendame completo: docker compose up --build
+#   Frontend:  http://localhost:5173
+#   API docs:  http://localhost:8000/docs
+services:
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:////data/agendame.db
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-agendame-docker-dev-secret-cambiar-en-produccion}
+      CORS_ORIGINS: '["http://localhost:5173"]'
+      BUSINESS_TIMEZONE: America/Argentina/Buenos_Aires
+      SEED_DEMO: ${SEED_DEMO:-true}
+      # Chatbot (opcional): sin key, el resto de la app funciona igual
+      CHAT_PROVIDER: ${CHAT_PROVIDER:-groq}
+      CHAT_MODEL: ${CHAT_MODEL:-openai/gpt-oss-120b}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+    volumes:
+      - agendame-data:/data
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    restart: unless-stopped
+
+volumes:
+  agendame-data:

@@ -1,0 +1,33 @@
+# Secretos (usar .env.example como plantilla)
+.env
+!.env.example
+
+# Bases de datos locales
+*.db
+*.db-shm
+*.db-wal
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Salidas sueltas de corridas de tests
+backend/*_output*.txt
+backend/test_*.txt
+backend/repo_test_*.txt
+
+# Node / frontend
+node_modules/
+frontend/dist/
+
+# Herramientas locales
+.claude/worktrees/
+.claude/settings.local.json
+.atl/.skill-registry.cache.json

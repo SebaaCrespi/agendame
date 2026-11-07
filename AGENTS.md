@@ -163,8 +163,16 @@ JWT_SECRET_KEY=dev-secret-change-me
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 REFRESH_TOKEN_EXPIRE_DAYS=7
+# Chatbot (CU-05/06): proveedor groq | nvidia | ollama
+CHAT_PROVIDER=groq
+CHAT_MODEL=openai/gpt-oss-120b
 GROQ_API_KEY=tu-groq-key
-CHAT_MODEL=llama-3.3-70b-versatile
+NVIDIA_API_KEY=
+OLLAMA_BASE_URL=http://localhost:11434
+CHAT_TEMPERATURE=0.1
+CHAT_TIMEOUT_S=20
+CHAT_MAX_HISTORY=10
+CHAT_SESSION_TTL=3600
 CORS_ORIGINS=http://localhost:5173
 ```
 
@@ -177,6 +185,7 @@ pip install -r requirements.txt
 alembic upgrade head          # Migraciones
 uvicorn app.main:app --reload # Dev server
 pytest -v                     # Tests
+python scripts/comparar_modelos.py  # Compara modelos del chatbot (necesita keys)
 mypy app/                     # Type check
 ruff check app/               # Lint
 
