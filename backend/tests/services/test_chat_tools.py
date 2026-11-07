@@ -149,3 +149,19 @@ class TestFechaTexto:
         tools, _ = _herramientas(db_session, sample_cliente.id + 999)
         texto = await tools["cancelar_turno"].ainvoke({"turno_id": turno.id, "motivo": "x"})
         assert texto.startswith("Error:")
+
+
+class TestCalendarioTexto:
+    def test_lista_proximos_dias(self) -> None:
+        from datetime import datetime
+
+        from app.services.chat_tools import calendario_texto
+
+        texto = calendario_texto(datetime(2026, 11, 7, 10, 0), dias=5)
+        assert texto.splitlines() == [
+            "- hoy: 2026-11-07",
+            "- mañana: 2026-11-08",
+            "- lunes: 2026-11-09",
+            "- martes: 2026-11-10",
+            "- miércoles: 2026-11-11",
+        ]

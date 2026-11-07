@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.timeutils import ahora_negocio
 from app.schemas.chat import ChatMessageResponse
-from app.services.chat_tools import crear_herramientas, hoy_texto
+from app.services.chat_tools import calendario_texto, crear_herramientas, hoy_texto
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +34,19 @@ Podés: consultar horarios libres, reservar turnos y, si el cliente inició sesi
 Reglas:
 - Usá SIEMPRE las herramientas para datos reales. Nunca inventes profesionales, servicios ni horarios.
 - Para consultar horarios necesitás el id del profesional y del servicio: si no los tenés, buscalos con buscar_profesionales.
-- Resolvé "hoy", "mañana", "el viernes", etc. a partir de la fecha de hoy y usá fechas AAAA-MM-DD en las herramientas.
+- Resolvé "hoy", "mañana", "el viernes", "el miércoles que viene", etc. con este calendario (no calcules fechas a mano). "El <día>" o "el <día> que viene" es la PRÓXIMA vez que aparece ese día en la lista. Usá fechas AAAA-MM-DD en las herramientas.
+Calendario:
+{calendario}
 - Si falta un dato, preguntá una sola cosa por vez.
+- Si el cliente pide un día u hora que no consultaste, llamá a consultar_disponibilidad para ese día ANTES de resumir la reserva. Si no está libre, decíselo y ofrecé los horarios libres más cercanos.
+- Al ofrecer horarios no listes todo: mostrá hasta 3 días con hasta 4 horarios cada uno, aclará que son algunas opciones (por ejemplo "estos son los primeros libres") y que puede pedir otro día u hora.
 - ANTES de reservar o cancelar, resumí lo que vas a hacer (profesional, servicio, día y hora) y terminá preguntando "¿Confirmás?". Llamá a reservar_turno o cancelar_turno SOLO cuando el cliente responda que sí a ese resumen. Pedir "cancelalo" o dar un motivo NO es una confirmación.
 - Para cancelar no hace falta motivo y no se lo pidas. Pero si el cliente dijo por qué (por ejemplo "no voy a poder ir"), incluilo en el resumen ("Motivo: no voy a poder ir") y pasalo en el parámetro motivo de cancelar_turno con sus palabras.
 - Si una herramienta devuelve "Error:", explicalo en palabras simples y ofrecé una alternativa (otros horarios, otro día).
 
 Cómo escribir:
-- Respondé en español, breve y amable.
-- Texto plano: sin markdown, sin asteriscos ni negritas. Para listar podés usar guiones al inicio de la línea.
+- Respondé en español rioplatense con voseo ("querés", "podés", "iniciá sesión"), breve y amable.
+- Formato simple: podés usar listas con guiones (una opción por línea) y **negrita** solo para profesional, servicio, día y hora en los resúmenes. Nada de títulos, tablas ni otros símbolos de markdown.
 - Nunca muestres ids internos (de profesional, servicio o turno); son solo para las herramientas.
 - Fechas: mostrale al cliente el campo "dia" que devuelven las herramientas (por ejemplo "sábado 7 de noviembre"), nunca AAAA-MM-DD. Al inicio de una oración, con mayúscula.
 - Horas en formato HH:MM.
@@ -123,9 +127,11 @@ class ChatbotService:
         por_nombre = {t.name: t for t in herramientas}
         modelo = self.llm.bind_tools(herramientas)
 
+        ahora = ahora_negocio()
         sistema = SystemMessage(
             SYSTEM_PROMPT.format(
-                hoy=hoy_texto(ahora_negocio()),
+                hoy=hoy_texto(ahora),
+                calendario=calendario_texto(ahora),
                 sesion=SESION_CLIENTE if cliente_id is not None else SESION_ANONIMA,
             )
         )
@@ -146,7 +152,7 @@ class ChatbotService:
                 break
             for call in ai.tool_calls:
                 herramienta = por_nombre.get(call["name"])
-                logger.info("chat tool %s", call["name"])
+                logger.info("chat tool %s %s", call["name"], call["args"])
                 resultado = (
                     await herramienta.ainvoke(call["args"])
                     if herramienta

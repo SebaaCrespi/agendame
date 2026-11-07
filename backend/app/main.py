@@ -1,5 +1,6 @@
 """FastAPI application factory."""
 
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -22,6 +23,14 @@ from app.api.v1 import (
 from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.core.exceptions import register_exception_handlers
+
+# Logs INFO de la app (por ejemplo, qué herramientas usa el chatbot) en la consola de uvicorn
+_app_logger = logging.getLogger("app")
+if not _app_logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(levelname)s:     %(name)s - %(message)s"))
+    _app_logger.addHandler(_handler)
+    _app_logger.setLevel(logging.INFO)
 
 
 @asynccontextmanager

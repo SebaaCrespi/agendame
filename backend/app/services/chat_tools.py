@@ -203,3 +203,14 @@ def crear_herramientas(session: AsyncSession, cliente_id: int | None, acciones: 
 def hoy_texto(ahora: datetime) -> str:
     """'jueves 2026-11-05' para el system prompt."""
     return f"{DIAS[ahora.weekday()]} {ahora.date().isoformat()}"
+
+
+def calendario_texto(ahora: datetime, dias: int = 14) -> str:
+    """Próximos días con su fecha, para que el modelo no calcule "el miércoles que viene" a mano."""
+    hoy = ahora.date()
+    lineas = []
+    for i in range(dias):
+        d = hoy + timedelta(days=i)
+        etiqueta = "hoy" if i == 0 else "mañana" if i == 1 else DIAS[d.weekday()]
+        lineas.append(f"- {etiqueta}: {d.isoformat()}")
+    return "\n".join(lineas)
