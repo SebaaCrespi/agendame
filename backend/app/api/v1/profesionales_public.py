@@ -1,11 +1,14 @@
-"""Public API endpoints for Profesional browsing (Público/CLIENTE)."""
+"""Public API endpoints for Profesional browsing.
+
+Sin login: un visitante elige profesional, servicio y horario antes de crear su cuenta.
+"""
 
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_cliente
+from app.api.deps import get_current_user_optional
 from app.core.database import get_db
 from app.models.user import User
 from app.schemas.pagination import FilterParams, PageParams
@@ -36,7 +39,7 @@ async def listar_profesionales_publico(
     size: int = Query(20, ge=1, le=100, description="Tamaño de página (máx 50 para público)"),
     q: str | None = Query(None, description="Búsqueda por nombre"),
     session: AsyncSession = Depends(get_db),
-    current_user: User | None = Depends(require_cliente),
+    current_user: User | None = Depends(get_current_user_optional),
 ) -> ProfesionalPublicListResponse:
     """Listar profesionales públicos con paginación y filtros."""
     # Limit public page size to 50
@@ -69,7 +72,7 @@ async def listar_profesionales_publico(
 async def obtener_profesional_publico(
     profesional_id: int = Path(..., ge=1, description="ID del profesional"),
     session: AsyncSession = Depends(get_db),
-    current_user: User | None = Depends(require_cliente),
+    current_user: User | None = Depends(get_current_user_optional),
 ) -> ProfesionalPublicResponse:
     """Obtener profesional público por ID."""
     service = ProfesionalService(session)
@@ -90,7 +93,7 @@ async def obtener_profesional_publico(
 async def listar_servicios_publico(
     profesional_id: int = Path(..., ge=1, description="ID del profesional"),
     session: AsyncSession = Depends(get_db),
-    current_user: User | None = Depends(require_cliente),
+    current_user: User | None = Depends(get_current_user_optional),
 ) -> list[ServicioResponse]:
     """Listar servicios públicos de un profesional."""
     # Verify profesional exists and is active
@@ -113,7 +116,7 @@ async def listar_servicios_publico(
 async def obtener_grilla_publico(
     profesional_id: int = Path(..., ge=1, description="ID del profesional"),
     session: AsyncSession = Depends(get_db),
-    current_user: User | None = Depends(require_cliente),
+    current_user: User | None = Depends(get_current_user_optional),
 ) -> GrillaDisponibilidadResponse:
     """Obtener grilla de disponibilidad pública."""
     # Verify profesional exists and is active
@@ -137,7 +140,7 @@ async def listar_excepciones_publico(
     desde: date | None = Query(None, description="Fecha desde (inclusive)"),
     hasta: date | None = Query(None, description="Fecha hasta (inclusive)"),
     session: AsyncSession = Depends(get_db),
-    current_user: User | None = Depends(require_cliente),
+    current_user: User | None = Depends(get_current_user_optional),
 ) -> list[ExcepcionResponse]:
     """Listar excepciones públicas de un profesional."""
     # Verify profesional exists and is active
@@ -162,7 +165,7 @@ async def obtener_slots_publico(
     desde: date = Query(..., description="Fecha desde (inclusive)"),
     hasta: date = Query(..., description="Fecha hasta (inclusive)"),
     session: AsyncSession = Depends(get_db),
-    current_user: User | None = Depends(require_cliente),
+    current_user: User | None = Depends(get_current_user_optional),
 ) -> SlotsListResponse:
     """Obtener slots disponibles públicos."""
     # Verify profesional exists and is active

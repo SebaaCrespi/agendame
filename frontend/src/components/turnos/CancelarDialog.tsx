@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { AlertCircle } from 'lucide-react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Input';
+import { Alerta } from '@/components/ui/Alerta';
 import { errorDetail } from './errorDetail';
 import type { Turno } from '@/types';
 
@@ -51,12 +51,12 @@ export function CancelarDialog({ open, resumen, cancelar, onClose, onCancelado }
   };
 
   return (
-    <Dialog open={open} title="Cancelar turno" onClose={cerrar}>
+    <Dialog open={open} title="Cancelar turno" description={resumen} onClose={cerrar}>
       <form onSubmit={onSubmit} className="space-y-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">{resumen}</p>
         <Textarea
           id="motivo-cancelacion"
           label="Motivo"
+          placeholder="Contanos brevemente por qué"
           value={motivo}
           onChange={(e) => setMotivo(e.target.value)}
           maxLength={MAX_MOTIVO}
@@ -64,13 +64,9 @@ export function CancelarDialog({ open, resumen, cancelar, onClose, onCancelado }
           required
           helperText={`${motivo.length}/${MAX_MOTIVO}`}
         />
-        {error && (
-          <div role="alert" className="flex items-center gap-2 rounded bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">
-            <AlertCircle className="h-4 w-4 shrink-0" /> {error}
-          </div>
-        )}
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={cerrar} disabled={saving}>
+        {error && <Alerta tipo="error">{error}</Alerta>}
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={cerrar} disabled={saving}>
             Volver
           </Button>
           <Button type="submit" variant="destructive" loading={saving}>

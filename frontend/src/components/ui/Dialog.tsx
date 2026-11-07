@@ -5,16 +5,16 @@ import { X } from 'lucide-react';
 interface DialogProps {
   open: boolean;
   title: string;
+  description?: string;
   onClose: () => void;
   children: ReactNode;
 }
 
 /**
- * Diálogo modal simple: overlay fijo, cierra con Escape, con el botón o
- * tocando fuera, y pone el foco en el primer campo al abrirse. Se renderiza en
- * un portal sobre <body> para que ningún contenedor padre recorte el overlay.
+ * Diálogo modal: cierra con Escape, con el botón o tocando fuera, y pone el
+ * foco en el primer campo al abrirse. Se renderiza en un portal sobre <body>.
  */
-export function Dialog({ open, title, onClose, children }: DialogProps) {
+export function Dialog({ open, title, description, onClose, children }: DialogProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   // Ref para no re-ejecutar el efecto (y robar el foco) cuando cambia onClose
@@ -33,14 +33,19 @@ export function Dialog({ open, title, onClose, children }: DialogProps) {
       'input, textarea, select, button:not([data-dialog-close])'
     );
     primero?.focus();
-    return () => document.removeEventListener('keydown', onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = overflow;
+    };
   }, [open]);
 
   if (!open) return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/50 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -50,18 +55,21 @@ export function Dialog({ open, title, onClose, children }: DialogProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-5 text-gray-900 shadow-xl dark:bg-gray-900 dark:text-gray-100"
+        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-line bg-surface p-5 text-fg shadow-pop sm:max-w-md sm:rounded-xl sm:p-6"
       >
-        <div className="mb-4 flex items-start justify-between gap-2">
-          <h2 id={titleId} className="text-lg font-semibold">{title}</h2>
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <h2 id={titleId} className="text-base font-semibold">{title}</h2>
+            {description && <p className="mt-1 text-[13px] text-muted">{description}</p>}
+          </div>
           <button
             type="button"
             data-dialog-close
             onClick={onClose}
             aria-label="Cerrar"
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            className="-m-1.5 rounded-md p-1.5 text-subtle transition-colors hover:bg-surface-2 hover:text-fg"
           >
-            <X className="h-5 w-5" />
+            <X className="size-4" />
           </button>
         </div>
         {children}

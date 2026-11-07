@@ -49,6 +49,33 @@ class TestListadoPublico:
         assert data["servicios"][0]["nombre"] == "Corte"
 
 
+class TestAccesoVisitante:
+    """Un visitante sin cuenta puede elegir profesional, servicio y horario; para reservar necesita cuenta."""
+
+    async def test_listado_sin_login(self, async_client, sample_profesional, sample_servicio):
+        response = await async_client.get(BASE)
+        assert response.status_code == 200, response.text
+        assert response.json()["items"][0]["servicios"][0]["nombre"] == "Corte"
+
+    async def test_detalle_sin_login(self, async_client, sample_profesional, sample_servicio):
+        response = await async_client.get(f"{BASE}/{sample_profesional.id}")
+        assert response.status_code == 200, response.text
+
+    async def test_reservar_sigue_requiriendo_login(self, async_client, sample_profesional, sample_servicio):
+        from tests.conftest import proximo_dia_habil
+
+        response = await async_client.post(
+            "/api/v1/turnos",
+            json={
+                "profesional_id": sample_profesional.id,
+                "servicio_id": sample_servicio.id,
+                "fecha": proximo_dia_habil(1).isoformat(),
+                "hora_inicio": "09:00",
+            },
+        )
+        assert response.status_code == 401
+
+
 class TestListadoAdmin:
     async def test_admin_ve_email(self, async_client, admin_headers, sample_profesional, db_session):
         from app.models.user import User

@@ -11,16 +11,18 @@ interface PaginacionProps {
 export function Paginacion({ page, pages, onChange }: PaginacionProps) {
   if (pages <= 1) return null;
   return (
-    <nav className="mt-6 flex items-center justify-center gap-2" aria-label="Paginación">
-      <Button variant="outline" size="sm" aria-label="Página anterior" disabled={page <= 1} onClick={() => onChange(page - 1)}>
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      <span className="text-sm text-gray-600 dark:text-gray-400">
+    <nav className="flex items-center justify-between gap-2 border-t border-line px-5 py-3" aria-label="Paginación">
+      <span className="text-[13px] text-muted tabular">
         Página {page} de {pages}
       </span>
-      <Button variant="outline" size="sm" aria-label="Página siguiente" disabled={page >= pages} onClick={() => onChange(page + 1)}>
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" aria-label="Página anterior" disabled={page <= 1} onClick={() => onChange(page - 1)}>
+          <ChevronLeft /> Anterior
+        </Button>
+        <Button variant="outline" size="sm" aria-label="Página siguiente" disabled={page >= pages} onClick={() => onChange(page + 1)}>
+          Siguiente <ChevronRight />
+        </Button>
+      </div>
     </nav>
   );
 }

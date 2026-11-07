@@ -5,7 +5,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_cliente
+from app.api.deps import get_current_user_optional, require_cliente
 from app.core.database import get_db
 from app.models.turno import TurnoEstado
 from app.models.user import User
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/turnos", tags=["Cliente - Turnos"])
     summary="Consultar disponibilidad de profesionales",
     description="Retorna slots disponibles agrupados por profesional y fecha. "
                 "Filtros opcionales: profesional_id, servicio_id. "
-                "Rango máximo: 60 días.",
+                "Rango máximo: 60 días. Público: no requiere login (RF-TURNO-01).",
 )
 async def consultar_disponibilidad(
     desde: date = Query(..., description="Fecha desde (inclusive)"),
@@ -37,7 +37,7 @@ async def consultar_disponibilidad(
     profesional_id: int | None = Query(None, ge=1, description="Filtrar por profesional"),
     servicio_id: int | None = Query(None, ge=1, description="Filtrar por servicio"),
     session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_cliente),
+    current_user: User | None = Depends(get_current_user_optional),
 ) -> DisponibilidadResponse:
     """Consultar disponibilidad de profesionales en rango de fechas."""
     service = TurnoService(session)

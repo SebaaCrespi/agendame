@@ -10,16 +10,40 @@ export const ESTADO_LABEL: Record<TurnoEstado, string> = {
   NO_ASISTIO: 'No asistió',
 };
 
-/** Clases de color por estado (bloque de grilla y badges). */
-export const ESTADO_COLOR: Record<TurnoEstado, string> = {
-  PENDIENTE: 'bg-yellow-100 text-yellow-900 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-100 dark:border-yellow-700',
-  CONFIRMADO: 'bg-green-100 text-green-900 border-green-300 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700',
-  EN_CURSO: 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700',
-  FINALIZADO: 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600',
-  CANCELADO_CLIENTE: 'bg-red-50 text-red-800 border-red-200 line-through dark:bg-red-900/20 dark:text-red-300 dark:border-red-800',
-  CANCELADO_PROFESIONAL: 'bg-orange-50 text-orange-800 border-orange-200 line-through dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800',
-  NO_ASISTIO: 'bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-900 dark:text-gray-400 dark:border-gray-700',
+/** Tono de cada estado: badge con fondo suave y punto de color. */
+export const ESTADO_TONO: Record<TurnoEstado, string> = {
+  PENDIENTE: 'bg-warning-soft text-warning',
+  CONFIRMADO: 'bg-success-soft text-success',
+  EN_CURSO: 'bg-info-soft text-info',
+  FINALIZADO: 'bg-surface-2 text-muted',
+  CANCELADO_CLIENTE: 'bg-danger-soft text-danger',
+  CANCELADO_PROFESIONAL: 'bg-danger-soft text-danger',
+  NO_ASISTIO: 'bg-surface-2 text-muted',
 };
+
+/** Color de la barra lateral de un turno en la grilla. */
+export const ESTADO_BARRA: Record<TurnoEstado, string> = {
+  PENDIENTE: 'border-l-warning',
+  CONFIRMADO: 'border-l-success',
+  EN_CURSO: 'border-l-info',
+  FINALIZADO: 'border-l-subtle',
+  CANCELADO_CLIENTE: 'border-l-danger',
+  CANCELADO_PROFESIONAL: 'border-l-danger',
+  NO_ASISTIO: 'border-l-subtle',
+};
+
+/** Color sólido del estado (puntos y barras de resumen). */
+export const ESTADO_PUNTO: Record<TurnoEstado, string> = {
+  PENDIENTE: 'bg-warning',
+  CONFIRMADO: 'bg-success',
+  EN_CURSO: 'bg-info',
+  FINALIZADO: 'bg-subtle',
+  CANCELADO_CLIENTE: 'bg-danger',
+  CANCELADO_PROFESIONAL: 'bg-danger',
+  NO_ASISTIO: 'bg-line-strong',
+};
+
+export const ES_CANCELADO = (e: TurnoEstado) => e === 'CANCELADO_CLIENTE' || e === 'CANCELADO_PROFESIONAL';
 
 /**
  * Cambios de estado que ofrece la UI del proveedor (copia de
@@ -61,3 +85,9 @@ export function estadosDelGrupo(grupo: GrupoEstado): TurnoEstado[] | undefined {
   const estados = GRUPOS_ESTADO[grupo].estados;
   return estados ? [...estados] : undefined;
 }
+
+/**
+ * El asistente puede reservar o cancelar turnos desde cualquier pantalla del
+ * cliente: este evento avisa a las páginas que muestran turnos que recarguen.
+ */
+export const EVENTO_TURNOS_CAMBIARON = 'agendame:turnos-cambiaron';
