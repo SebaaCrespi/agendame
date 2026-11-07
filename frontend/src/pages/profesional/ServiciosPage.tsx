@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Clock, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Clock, Pencil, Plus, Stethoscope, Trash2 } from 'lucide-react';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
+import { Card, CardSection } from '@/components/ui/Card';
 import { Dialog } from '@/components/ui/Dialog';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Alerta } from '@/components/ui/Alerta';
+import { EmptyState, Spinner } from '@/components/ui/misc';
 import { errorDetail } from '@/components/turnos/errorDetail';
+import { formatPrecio } from '@/utils/formato';
 import type { Servicio } from '@/types';
-
-const formatPrecio = (centavos: number) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(centavos / 100);
 
 interface Form {
   nombre: string;
@@ -115,52 +115,58 @@ export function ProfesionalServiciosPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Servicios</h1>
-          <p className="mt-1 text-gray-600 dark:text-gray-400">Lo que los clientes pueden reservar con vos</p>
-        </div>
-        <Button onClick={() => abrir('nuevo')}>
-          <Plus className="h-4 w-4" /> Nuevo servicio
-        </Button>
-      </div>
+    <div className="max-w-3xl">
+      {error && <Alerta tipo="error" className="mb-4">{error}</Alerta>}
 
-      {error && <Alerta tipo="error">{error}</Alerta>}
-
-      {loading ? (
-        <p className="text-sm text-gray-500">Cargando…</p>
-      ) : servicios.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-700">
-          Todavía no cargaste servicios. Sin servicios, los clientes no pueden reservar.
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {servicios.map((s) => (
-            <li
-              key={s.id}
-              className="flex flex-wrap items-start gap-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-gray-900 dark:text-white">{s.nombre}</p>
-                {s.descripcion && <p className="text-sm text-gray-500 dark:text-gray-400">{s.descripcion}</p>}
-                <p className="mt-1 flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300">
-                  <span className="flex items-center gap-1 whitespace-nowrap"><Clock className="h-4 w-4" /> {s.duracion_min} min</span>
-                  <span className="whitespace-nowrap">{formatPrecio(s.precio)}</span>
-                </p>
-              </div>
-              <div className="flex w-full justify-end gap-2 sm:w-auto">
-                <Button variant="outline" size="sm" onClick={() => abrir(s)} aria-label={`Editar ${s.nombre}`}>
-                  <Pencil className="h-4 w-4" /> Editar
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setADesactivar(s)} aria-label={`Desactivar ${s.nombre}`}>
-                  <Trash2 className="h-4 w-4" /> Desactivar
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <Card padding="none" className="overflow-hidden">
+        <CardSection
+          title="Servicios"
+          actions={
+            servicios.length > 0 && (
+              <Button size="sm" onClick={() => abrir('nuevo')}>
+                <Plus /> Nuevo servicio
+              </Button>
+            )
+          }
+        />
+        {loading ? (
+          <Spinner />
+        ) : servicios.length === 0 ? (
+          <EmptyState
+            icon={Stethoscope}
+            title="Todavía no cargaste servicios"
+            description="Sin servicios, los clientes no pueden reservar con vos."
+            action={
+              <Button onClick={() => abrir('nuevo')}>
+                <Plus /> Crear el primero
+              </Button>
+            }
+          />
+        ) : (
+          <ul className="divide-y divide-line">
+            {servicios.map((s) => (
+              <li key={s.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-fg">{s.nombre}</p>
+                  {s.descripcion && <p className="mt-0.5 text-[13px] text-muted">{s.descripcion}</p>}
+                  <p className="mt-1.5 flex items-center gap-3 text-[13px] text-muted">
+                    <span className="flex items-center gap-1.5"><Clock className="size-3.5" aria-hidden="true" /> {s.duracion_min} min</span>
+                    <span className="font-medium text-fg tabular">{formatPrecio(s.precio)}</span>
+                  </p>
+                </div>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => abrir(s)} aria-label={`Editar ${s.nombre}`}>
+                    <Pencil /> Editar
+                  </Button>
+                  <Button variant="ghost" size="sm" className="hover:text-danger" onClick={() => setADesactivar(s)} aria-label={`Desactivar ${s.nombre}`}>
+                    <Trash2 />
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       <Dialog open={editando !== null} title={editando === 'nuevo' ? 'Nuevo servicio' : 'Editar servicio'} onClose={() => !saving && setEditando(null)}>
         <form onSubmit={guardar} className="space-y-4">
@@ -172,22 +178,22 @@ export function ProfesionalServiciosPage() {
           </div>
           <Input id="servicio-orden" label="Orden en la lista" type="number" min={0} value={form.orden} onChange={(e) => setForm({ ...form, orden: e.target.value })} helperText="Los de menor número aparecen primero" />
           {formError && <Alerta tipo="error">{formError}</Alerta>}
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setEditando(null)} disabled={saving}>Volver</Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setEditando(null)} disabled={saving}>Volver</Button>
             <Button type="submit" loading={saving}>Guardar</Button>
           </div>
         </form>
       </Dialog>
 
-      <Dialog open={aDesactivar !== null} title="Desactivar servicio" onClose={() => !saving && setADesactivar(null)}>
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            «{aDesactivar?.nombre}» deja de aparecer para reservar. Los turnos ya reservados no cambian.
-          </p>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setADesactivar(null)} disabled={saving}>Volver</Button>
-            <Button variant="destructive" onClick={desactivar} loading={saving}>Desactivar</Button>
-          </div>
+      <Dialog
+        open={aDesactivar !== null}
+        title="Desactivar servicio"
+        description={`«${aDesactivar?.nombre ?? ''}» deja de aparecer para reservar. Los turnos ya reservados no cambian.`}
+        onClose={() => !saving && setADesactivar(null)}
+      >
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={() => setADesactivar(null)} disabled={saving}>Volver</Button>
+          <Button variant="destructive" onClick={desactivar} loading={saving}>Desactivar</Button>
         </div>
       </Dialog>
     </div>

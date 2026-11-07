@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { format } from 'date-fns';
-import { AlertCircle } from 'lucide-react';
 import { api } from '@/services/api';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
+import { Alerta } from '@/components/ui/Alerta';
 import { cn } from '@/utils/cn';
 import { parseHoraNegocio } from '@/utils/horaNegocio';
 import { errorDetail, errorStatus } from './errorDetail';
@@ -96,11 +96,8 @@ export function ReasignarDialog({ open, turno, onClose, onReasignado }: Reasigna
   };
 
   return (
-    <Dialog open={open} title="Reasignar turno" onClose={cerrar}>
+    <Dialog open={open} title="Reasignar turno" description={`${turno.cliente_nombre} · ${turno.servicio_nombre}`} onClose={cerrar}>
       <form onSubmit={onSubmit} className="space-y-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {turno.cliente_nombre} · {turno.servicio_nombre}
-        </p>
         <Input
           id="reasignar-fecha"
           label="Nueva fecha"
@@ -115,11 +112,11 @@ export function ReasignarDialog({ open, turno, onClose, onReasignado }: Reasigna
         />
 
         <div>
-          <p className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Horario</p>
+          <p className="mb-1.5 text-[13px] font-medium text-fg">Horario</p>
           {loadingSlots ? (
-            <p className="text-sm text-gray-500">Cargando horarios…</p>
+            <p className="text-[13px] text-muted">Cargando horarios…</p>
           ) : slots.length === 0 ? (
-            <p className="text-sm text-gray-500">No hay horarios libres ese día</p>
+            <p className="rounded-lg bg-surface-2 px-3 py-2.5 text-[13px] text-muted">No hay horarios libres ese día</p>
           ) : (
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-5" role="radiogroup" aria-label="Horarios libres">
               {slots.map((s) => {
@@ -135,10 +132,10 @@ export function ReasignarDialog({ open, turno, onClose, onReasignado }: Reasigna
                     title={esActual ? 'Horario actual del turno' : undefined}
                     onClick={() => setHora(s.hora_inicio)}
                     className={cn(
-                      'rounded-md border px-2 py-1.5 text-sm transition-colors',
+                      'h-9 rounded-lg border text-sm font-medium tabular transition-colors',
                       hora === s.hora_inicio
-                        ? 'border-indigo-600 bg-indigo-600 text-white'
-                        : 'border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800',
+                        ? 'border-primary bg-primary text-on-primary'
+                        : 'border-line bg-surface text-fg hover:border-primary hover:text-primary',
                       esActual && 'cursor-not-allowed opacity-40'
                     )}
                   >
@@ -160,14 +157,10 @@ export function ReasignarDialog({ open, turno, onClose, onReasignado }: Reasigna
           required
         />
 
-        {error && (
-          <div role="alert" className="flex items-center gap-2 rounded bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">
-            <AlertCircle className="h-4 w-4 shrink-0" /> {error}
-          </div>
-        )}
+        {error && <Alerta tipo="error">{error}</Alerta>}
 
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={cerrar} disabled={saving}>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="outline" onClick={cerrar} disabled={saving}>
             Volver
           </Button>
           <Button type="submit" loading={saving} disabled={!hora}>

@@ -1,47 +1,57 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
-import { cn } from '../../utils/cn';
+import { Loader2 } from 'lucide-react';
+import { cn } from '@/utils/cn';
+
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
 }
 
+const variants: Record<ButtonVariant, string> = {
+  primary: 'bg-primary text-on-primary hover:bg-primary-hover',
+  secondary: 'bg-surface-2 text-fg hover:bg-line',
+  outline: 'border border-line bg-surface text-fg hover:bg-surface-2 hover:border-line-strong',
+  ghost: 'text-muted hover:bg-surface-2 hover:text-fg',
+  destructive: 'bg-danger text-white hover:opacity-90 dark:text-canvas',
+};
+
+const sizes: Record<ButtonSize, string> = {
+  sm: 'h-8 px-3 text-[13px] gap-1.5',
+  md: 'h-10 px-4 text-sm gap-2',
+  lg: 'h-11 px-5 text-[15px] gap-2',
+  icon: 'h-9 w-9',
+};
+
+/** Clases de botón, para usar en <Link> u otros elementos. */
+export function buttonClass(variant: ButtonVariant = 'primary', size: ButtonSize = 'md', className?: string) {
+  return cn(
+    'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg font-medium transition-colors',
+    'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring',
+    'disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+    variants[variant],
+    sizes[size],
+    className
+  );
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-
-    const variants = {
-      primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500',
-      secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700',
-      outline: 'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus:ring-gray-500 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800',
-      ghost: 'bg-transparent hover:bg-gray-100 focus:ring-gray-500 dark:hover:bg-gray-800',
-      destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-    };
-
-    const sizes = {
-      sm: 'px-3 py-1.5 text-sm gap-1.5',
-      md: 'px-4 py-2 text-sm gap-2',
-      lg: 'px-6 py-3 text-base gap-2',
-    };
-
-    return (
-      <button
-        ref={ref}
-        className={cn(baseStyles, variants[variant], sizes[size], className)}
-        disabled={disabled || loading}
-        {...props}
-      >
-        {loading && (
-          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-        )}
-        {children}
-      </button>
-    );
-  }
+  ({ className, variant = 'primary', size = 'md', loading, disabled, children, type = 'button', ...props }, ref) => (
+    <button
+      ref={ref}
+      type={type}
+      className={buttonClass(variant, size, className)}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      {loading && <Loader2 className="animate-spin" aria-hidden="true" />}
+      {children}
+    </button>
+  )
 );
 
 Button.displayName = 'Button';

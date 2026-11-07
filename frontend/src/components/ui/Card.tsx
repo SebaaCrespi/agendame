@@ -1,7 +1,8 @@
-import { cn } from '../../utils/cn';
+import type { ReactNode } from 'react';
+import { cn } from '@/utils/cn';
 
 interface CardProps {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
@@ -9,49 +10,42 @@ interface CardProps {
 const paddingStyles = {
   none: '',
   sm: 'p-4',
-  md: 'p-6',
+  md: 'p-5',
   lg: 'p-8',
 };
 
 export function Card({ children, className, padding = 'md' }: CardProps) {
   return (
-    <div
-      className={cn(
-        'bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700',
-        paddingStyles[padding],
-        className
-      )}
-    >
-      {children}
-    </div>
+    <div className={cn('rounded-xl border border-line bg-surface', paddingStyles[padding], className)}>{children}</div>
   );
 }
 
-export function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {
+export function CardHeader({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn('mb-4', className)}>{children}</div>;
 }
 
-export function CardTitle({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <h3 className={cn('text-lg font-semibold text-gray-900 dark:text-white', className)}>{children}</h3>;
+export function CardTitle({ children, className }: { children: ReactNode; className?: string }) {
+  return <h2 className={cn('text-[15px] font-semibold text-fg', className)}>{children}</h2>;
 }
 
-export function CardDescription({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <p className={cn('text-sm text-gray-500 dark:text-gray-400 mt-1', className)}>{children}</p>;
+export function CardDescription({ children, className }: { children: ReactNode; className?: string }) {
+  return <p className={cn('mt-0.5 text-[13px] text-muted', className)}>{children}</p>;
 }
 
-export function CardContent({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn(className)}>{children}</div>;
+export function CardContent({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>;
 }
 
-export function CardFooter({ children, className }: { children: React.ReactNode; className?: string }) {
+export function CardFooter({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn('mt-5 flex items-center gap-2 border-t border-line pt-4', className)}>{children}</div>;
+}
+
+/** Cabecera de sección dentro de una card sin padding: título a la izquierda, acciones a la derecha. */
+export function CardSection({ title, actions, className }: { title: ReactNode; actions?: ReactNode; className?: string }) {
   return (
-    <div
-      className={cn(
-        'mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2',
-        className
-      )}
-    >
-      {children}
+    <div className={cn('flex min-h-[52px] items-center justify-between gap-3 border-b border-line px-5 py-3', className)}>
+      <h2 className="text-[15px] font-semibold text-fg">{title}</h2>
+      {actions}
     </div>
   );
 }

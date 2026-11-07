@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Input, Textarea } from '@/components/ui/Input';
-import { Alerta, inputClass } from '@/components/ui/Alerta';
+import { Card, CardDescription, CardTitle } from '@/components/ui/Card';
+import { Input, Select, Textarea } from '@/components/ui/Input';
+import { Alerta } from '@/components/ui/Alerta';
+import { Avatar, Spinner } from '@/components/ui/misc';
 import { errorDetail } from '@/components/turnos/errorDetail';
 import type { Profesional, ProfesionalUpdate } from '@/types';
 
@@ -48,7 +49,7 @@ export function ProfesionalPerfilPage() {
   }, []);
 
   if (!form || !perfil) {
-    return error ? <Alerta tipo="error">{error}</Alerta> : <p className="text-sm text-gray-500">Cargando…</p>;
+    return error ? <Alerta tipo="error">{error}</Alerta> : <Spinner />;
   }
 
   const set = <K extends keyof Form>(campo: K, valor: Form[K]) => {
@@ -83,62 +84,52 @@ export function ProfesionalPerfilPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Mi perfil</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">Así te ven los clientes al reservar</p>
-      </div>
-
-      <Card>
-        <CardHeader>
+    <div className="grid max-w-5xl items-start gap-6 lg:grid-cols-[1fr_300px]">
+      <Card padding="none">
+        <div className="border-b border-line px-5 py-4">
           <CardTitle>Datos</CardTitle>
           <CardDescription>Email de acceso: {perfil.email}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={guardar} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input id="perfil-nombre" label="Nombre" value={form.nombre} onChange={(e) => set('nombre', e.target.value)} required maxLength={100} />
-              <Input id="perfil-apellido" label="Apellido" value={form.apellido} onChange={(e) => set('apellido', e.target.value)} required maxLength={100} />
-            </div>
-            <Input id="perfil-telefono" label="Teléfono" type="tel" value={form.telefono} onChange={(e) => set('telefono', e.target.value)} maxLength={20} />
-            <Textarea id="perfil-bio" label="Sobre vos" value={form.bio} onChange={(e) => set('bio', e.target.value)} rows={3} />
-            <Input
-              id="perfil-foto"
-              label="Foto (URL)"
-              type="url"
-              value={form.foto_url}
-              onChange={(e) => set('foto_url', e.target.value)}
-              maxLength={500}
-              placeholder="https://…"
-            />
-            <div>
-              <label htmlFor="perfil-slot" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Duración base del turno
-              </label>
-              <select
-                id="perfil-slot"
-                value={form.slot_duracion_min}
-                onChange={(e) => set('slot_duracion_min', Number(e.target.value))}
-                className={`${inputClass} w-full`}
-              >
-                {DURACIONES.map((m) => (
-                  <option key={m} value={m}>{m} minutos</option>
-                ))}
-              </select>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Cada cuánto empiezan los horarios que ven los clientes. Los turnos ya reservados no cambian.
-              </p>
-            </div>
+        </div>
+        <form onSubmit={guardar} className="space-y-4 p-5">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input id="perfil-nombre" label="Nombre" value={form.nombre} onChange={(e) => set('nombre', e.target.value)} required maxLength={100} />
+            <Input id="perfil-apellido" label="Apellido" value={form.apellido} onChange={(e) => set('apellido', e.target.value)} required maxLength={100} />
+          </div>
+          <Input id="perfil-telefono" label="Teléfono" type="tel" value={form.telefono} onChange={(e) => set('telefono', e.target.value)} maxLength={20} />
+          <Textarea id="perfil-bio" label="Sobre vos" placeholder="Especialidad, experiencia, lo que quieras contar" value={form.bio} onChange={(e) => set('bio', e.target.value)} rows={3} />
+          <Input id="perfil-foto" label="Foto (URL)" type="url" value={form.foto_url} onChange={(e) => set('foto_url', e.target.value)} maxLength={500} placeholder="https://…" />
+          <Select
+            id="perfil-slot"
+            label="Duración base del turno"
+            value={form.slot_duracion_min}
+            onChange={(e) => set('slot_duracion_min', Number(e.target.value))}
+            helperText="Cada cuánto empiezan los horarios que ven los clientes. Los turnos ya reservados no cambian."
+          >
+            {DURACIONES.map((m) => (
+              <option key={m} value={m}>{m} minutos</option>
+            ))}
+          </Select>
 
-            {error && <Alerta tipo="error">{error}</Alerta>}
-            {ok && <Alerta tipo="ok">{ok}</Alerta>}
+          {error && <Alerta tipo="error">{error}</Alerta>}
+          {ok && <Alerta tipo="ok">{ok}</Alerta>}
 
-            <div className="flex justify-end">
-              <Button type="submit" loading={saving} disabled={!hayCambios}>Guardar</Button>
-            </div>
-          </form>
-        </CardContent>
+          <div className="flex justify-end">
+            <Button type="submit" loading={saving} disabled={!hayCambios}>Guardar cambios</Button>
+          </div>
+        </form>
       </Card>
+
+      {/* Vista previa: así aparece al reservar */}
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Así te ven al reservar</p>
+        <div className="flex items-start gap-3.5 rounded-xl border border-line bg-surface p-4">
+          <Avatar nombre={`${form.nombre} ${form.apellido}`} src={form.foto_url.trim() || null} />
+          <div className="min-w-0">
+            <p className="font-medium text-fg">{form.nombre} {form.apellido}</p>
+            {form.bio && <p className="mt-0.5 line-clamp-3 text-[13px] text-muted">{form.bio}</p>}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

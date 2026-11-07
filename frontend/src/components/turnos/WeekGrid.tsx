@@ -1,11 +1,11 @@
-import { addDays, format, isSameDay } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { addDays, isSameDay } from 'date-fns';
 import { cn } from '@/utils/cn';
+import { capitalizar, fmt } from '@/utils/formato';
 import { formatHora, minutosDelDia, parseHoraNegocio } from '@/utils/horaNegocio';
-import { ESTADO_COLOR } from './estado';
+import { ES_CANCELADO, ESTADO_BARRA } from './estado';
 import type { Turno } from '@/types';
 
-const PX_POR_MIN = 1.2; // 30 min = 36 px
+const PX_POR_MIN = 1.4; // 30 min = 42 px
 
 interface WeekGridProps {
   inicioSemana: Date; // lunes
@@ -22,38 +22,39 @@ export function WeekGrid({ inicioSemana, turnos, desdeMin, hastaMin, selectedId,
   const horas: number[] = [];
   for (let m = Math.floor(desdeMin / 60) * 60; m < hastaMin; m += 60) horas.push(m);
   const alto = (hastaMin - desdeMin) * PX_POR_MIN;
-  const hoy = new Date();
+  const ahora = new Date();
+  const minAhora = ahora.getHours() * 60 + ahora.getMinutes();
 
   return (
     // Scroll horizontal propio: en pantallas angostas la página no se desborda
-    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-      <div className="min-w-[720px]">
-        {/* Encabezado de días */}
-        <div className="grid grid-cols-[48px_repeat(7,1fr)] border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+    <div className="overflow-x-auto">
+      <div className="min-w-[760px]">
+        <div className="grid grid-cols-[52px_repeat(7,1fr)] border-b border-line">
           <div />
-          {dias.map((dia) => (
-            <div
-              key={dia.toISOString()}
-              className={cn(
-                'py-2 text-center text-xs font-medium capitalize',
-                isSameDay(dia, hoy) ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-300'
-              )}
-            >
-              {format(dia, 'EEE d', { locale: es })}
-            </div>
-          ))}
+          {dias.map((dia) => {
+            const esHoy = isSameDay(dia, ahora);
+            return (
+              <div key={dia.toISOString()} className="flex flex-col items-center py-2.5">
+                <span className={cn('text-[11px] font-medium uppercase', esHoy ? 'text-primary' : 'text-muted')}>
+                  {capitalizar(fmt(dia, 'EEE'))}
+                </span>
+                <span
+                  className={cn(
+                    'mt-0.5 flex size-7 items-center justify-center rounded-full text-sm font-semibold tabular',
+                    esHoy ? 'bg-primary text-on-primary' : 'text-fg'
+                  )}
+                >
+                  {fmt(dia, 'd')}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Cuerpo */}
-        <div className="grid grid-cols-[48px_repeat(7,1fr)]">
-          {/* Eje de horas */}
+        <div className="grid grid-cols-[52px_repeat(7,1fr)]">
           <div className="relative" style={{ height: alto }}>
             {horas.map((m) => (
-              <div
-                key={m}
-                className="absolute right-1 -translate-y-2 text-[10px] text-gray-400"
-                style={{ top: (m - desdeMin) * PX_POR_MIN }}
-              >
+              <div key={m} className="absolute right-2 -translate-y-2 text-[11px] text-subtle tabular" style={{ top: (m - desdeMin) * PX_POR_MIN }}>
                 {String(m / 60).padStart(2, '0')}:00
               </div>
             ))}
@@ -61,37 +62,39 @@ export function WeekGrid({ inicioSemana, turnos, desdeMin, hastaMin, selectedId,
 
           {dias.map((dia) => {
             const delDia = turnos.filter((t) => isSameDay(parseHoraNegocio(t.fecha_inicio), dia));
+            const esHoy = isSameDay(dia, ahora);
             return (
-              <div
-                key={dia.toISOString()}
-                className="relative border-l border-gray-100 dark:border-gray-800"
-                style={{ height: alto }}
-              >
+              <div key={dia.toISOString()} className={cn('relative border-l border-line', esHoy && 'bg-primary-soft/40')} style={{ height: alto }}>
                 {horas.map((m) => (
-                  <div
-                    key={m}
-                    className="absolute inset-x-0 border-t border-gray-100 dark:border-gray-800"
-                    style={{ top: (m - desdeMin) * PX_POR_MIN }}
-                  />
+                  <div key={m} className="absolute inset-x-0 border-t border-line/70" style={{ top: (m - desdeMin) * PX_POR_MIN }} />
                 ))}
+                {esHoy && minAhora >= desdeMin && minAhora <= hastaMin && (
+                  <div className="absolute inset-x-0 z-10 h-px bg-danger" style={{ top: (minAhora - desdeMin) * PX_POR_MIN }} aria-hidden="true">
+                    <span className="absolute -left-1 -top-1 size-2 rounded-full bg-danger" />
+                  </div>
+                )}
                 {delDia.map((t) => {
                   const ini = Math.max(minutosDelDia(t.fecha_inicio), desdeMin);
                   const fin = Math.min(minutosDelDia(t.fecha_fin), hastaMin);
+                  const cancelado = ES_CANCELADO(t.estado);
                   return (
                     <button
                       key={t.id}
                       type="button"
                       onClick={() => onSelect(t)}
-                      title={`${formatHora(t.fecha_inicio)} ${t.cliente_nombre} - ${t.servicio_nombre}`}
+                      title={`${formatHora(t.fecha_inicio)} ${t.cliente_nombre} · ${t.servicio_nombre}`}
                       className={cn(
-                        'absolute inset-x-0.5 overflow-hidden rounded border px-1 py-0.5 text-left text-[11px] leading-tight transition-shadow hover:shadow-md',
-                        ESTADO_COLOR[t.estado],
-                        selectedId === t.id && 'ring-2 ring-indigo-500'
+                        'absolute inset-x-1 overflow-hidden rounded-md border border-l-[3px] border-line bg-surface px-1.5 py-1 text-left text-[11px] leading-tight shadow-sm transition-shadow hover:shadow-md',
+                        ESTADO_BARRA[t.estado],
+                        cancelado && 'bg-surface-2 text-subtle',
+                        selectedId === t.id && 'ring-2 ring-primary'
                       )}
-                      style={{ top: (ini - desdeMin) * PX_POR_MIN, height: Math.max((fin - ini) * PX_POR_MIN, 18) }}
+                      style={{ top: (ini - desdeMin) * PX_POR_MIN + 1, height: Math.max((fin - ini) * PX_POR_MIN - 2, 20) }}
                     >
-                      <span className="font-semibold">{formatHora(t.fecha_inicio)}</span> {t.cliente_nombre}
-                      <span className="block truncate opacity-80">{t.servicio_nombre}</span>
+                      <span className={cn('block truncate font-semibold text-fg', cancelado && 'text-subtle line-through')}>
+                        <span className="tabular">{formatHora(t.fecha_inicio)}</span> {t.cliente_nombre}
+                      </span>
+                      <span className="block truncate text-muted">{t.servicio_nombre}</span>
                     </button>
                   );
                 })}

@@ -1,16 +1,23 @@
 import { useState } from 'react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { AlertCircle, CalendarClock, Clock, Phone, Scissors, User, X, XCircle } from 'lucide-react';
+import { CalendarClock, Phone, RotateCcw, Stethoscope, UserRound, X, XCircle } from 'lucide-react';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
-import { cn } from '@/utils/cn';
+import { Textarea } from '@/components/ui/Input';
+import { Alerta } from '@/components/ui/Alerta';
+import { capitalizar, fmt } from '@/utils/formato';
 import { formatHora, parseHoraNegocio } from '@/utils/horaNegocio';
-import { ACCION_LABEL, ESTADO_COLOR, ESTADO_LABEL, TRANSICIONES } from './estado';
+import { ACCION_LABEL, TRANSICIONES } from './estado';
+import { EstadoBadge } from './EstadoBadge';
 import { CancelarDialog } from './CancelarDialog';
 import { ReasignarDialog } from './ReasignarDialog';
 import { errorDetail } from './errorDetail';
 import type { Turno, TurnoEstado } from '@/types';
+
+/** Acciones de estado posibles ahora (ausente desde CONFIRMADO solo después de la hora de inicio, igual que el backend). */
+export function accionesDisponibles(turno: Turno, ahora = new Date()): TurnoEstado[] {
+  const yaEmpezo = parseHoraNegocio(turno.fecha_inicio) <= ahora;
+  return TRANSICIONES[turno.estado].filter((d) => !(turno.estado === 'CONFIRMADO' && d === 'NO_ASISTIO' && !yaEmpezo));
+}
 
 interface TurnoDetallePanelProps {
   turno: Turno;
@@ -24,17 +31,15 @@ export function TurnoDetallePanel({ turno, onClose, onUpdated }: TurnoDetallePan
   const [error, setError] = useState<string | null>(null);
   const [dialogo, setDialogo] = useState<'cancelar' | 'reasignar' | null>(null);
 
-  const yaEmpezo = parseHoraNegocio(turno.fecha_inicio) <= new Date();
-  const acciones = TRANSICIONES[turno.estado].filter(
-    // Ausente desde CONFIRMADO solo después de la hora de inicio (igual que el backend)
-    (destino) => !(turno.estado === 'CONFIRMADO' && destino === 'NO_ASISTIO' && !yaEmpezo)
-  );
+  const inicio = parseHoraNegocio(turno.fecha_inicio);
+  const yaEmpezo = inicio <= new Date();
+  const acciones = accionesDisponibles(turno);
 
   // CU-08: pendientes/confirmados solo si todavía no empezaron; en curso se puede cancelar
   const futuro = (turno.estado === 'PENDIENTE' || turno.estado === 'CONFIRMADO') && !yaEmpezo;
   const puedeReasignar = futuro;
   const puedeCancelar = futuro || turno.estado === 'EN_CURSO';
-  const resumen = `${format(parseHoraNegocio(turno.fecha_inicio), "EEEE d MMM, HH:mm", { locale: es })} · ${turno.cliente_nombre} · ${turno.servicio_nombre}`;
+  const resumen = `${fmt(inicio, "EEEE d MMM, HH:mm")} · ${turno.cliente_nombre} · ${turno.servicio_nombre}`;
 
   const cambiarEstado = async (destino: TurnoEstado) => {
     setSaving(destino);
@@ -61,105 +66,108 @@ export function TurnoDetallePanel({ turno, onClose, onUpdated }: TurnoDetallePan
   };
 
   return (
-    <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
-      <div className="flex items-start justify-between gap-2">
+    <div className="rounded-xl border border-line bg-surface lg:sticky lg:top-8">
+      <div className="flex items-start justify-between gap-2 border-b border-line px-5 py-4">
         <div>
-          <p className="text-sm capitalize text-gray-500 dark:text-gray-400">
-            {format(parseHoraNegocio(turno.fecha_inicio), 'EEEE d MMMM', { locale: es })}
-          </p>
-          <p className="flex items-center gap-1 text-lg font-semibold">
-            <Clock className="h-4 w-4" /> {formatHora(turno.fecha_inicio)} – {formatHora(turno.fecha_fin)}
+          <p className="text-[13px] text-muted">{capitalizar(fmt(inicio, "EEEE d 'de' MMMM"))}</p>
+          <p className="text-lg font-semibold text-fg tabular">
+            {formatHora(turno.fecha_inicio)} – {formatHora(turno.fecha_fin)}
           </p>
         </div>
-        <button type="button" onClick={onClose} aria-label="Cerrar detalle" className="text-gray-400 hover:text-gray-600">
-          <X className="h-5 w-5" />
+        <button type="button" onClick={onClose} aria-label="Cerrar detalle" className="-mr-1.5 rounded-md p-1.5 text-subtle hover:bg-surface-2 hover:text-fg">
+          <X className="size-4" />
         </button>
       </div>
 
-      <span className={cn('inline-block rounded border px-2 py-0.5 text-xs font-medium', ESTADO_COLOR[turno.estado])}>
-        {ESTADO_LABEL[turno.estado]}
-      </span>
+      <div className="space-y-5 p-5">
+        <EstadoBadge estado={turno.estado} />
 
-      <div className="space-y-1 text-sm">
-        <p className="flex items-center gap-2"><User className="h-4 w-4 text-gray-400" /> {turno.cliente_nombre}</p>
-        {turno.cliente_telefono && (
-          <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-gray-400" /> {turno.cliente_telefono}</p>
-        )}
-        <p className="flex items-center gap-2"><Scissors className="h-4 w-4 text-gray-400" /> {turno.servicio_nombre}</p>
-        {turno.notas_cliente && (
-          <p className="text-gray-500 dark:text-gray-400">Nota del cliente: {turno.notas_cliente}</p>
-        )}
-      </div>
-
-      {turno.motivo_cancelacion && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">Motivo de cancelación: {turno.motivo_cancelacion}</p>
-      )}
-      {turno.reasignado_desde && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Reasignado desde el {format(parseHoraNegocio(turno.reasignado_desde), "d MMM, HH:mm", { locale: es })}
-          {turno.motivo_reasignacion && ` · ${turno.motivo_reasignacion}`}
-        </p>
-      )}
-
-      {(puedeReasignar || puedeCancelar) && (
-        <div className="flex flex-wrap gap-2">
-          {puedeReasignar && (
-            <Button size="sm" variant="outline" disabled={saving !== null} onClick={() => setDialogo('reasignar')}>
-              <CalendarClock className="h-4 w-4" /> Reasignar
-            </Button>
+        <dl className="space-y-2.5 text-sm">
+          <Fila icon={UserRound} valor={turno.cliente_nombre} />
+          {turno.cliente_telefono && (
+            <Fila
+              icon={Phone}
+              valor={
+                <a href={`tel:${turno.cliente_telefono}`} className="text-primary hover:underline">
+                  {turno.cliente_telefono}
+                </a>
+              }
+            />
           )}
-          {puedeCancelar && (
-            <Button size="sm" variant="outline" disabled={saving !== null} onClick={() => setDialogo('cancelar')}>
-              <XCircle className="h-4 w-4" /> Cancelar
-            </Button>
-          )}
-        </div>
-      )}
+          <Fila icon={Stethoscope} valor={turno.servicio_nombre} />
+        </dl>
 
-      {acciones.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {acciones.map((destino) => (
-            <Button
-              key={destino}
-              size="sm"
-              variant={destino === 'NO_ASISTIO' ? 'outline' : 'primary'}
-              loading={saving === destino}
-              disabled={saving !== null}
-              onClick={() => cambiarEstado(destino)}
-            >
-              {ACCION_LABEL[destino]}
-            </Button>
-          ))}
-        </div>
-      )}
+        {(turno.notas_cliente || turno.motivo_cancelacion || turno.reasignado_desde) && (
+          <div className="space-y-1.5 rounded-lg bg-surface-2 px-3.5 py-3 text-[13px] text-muted">
+            {turno.notas_cliente && <p><span className="font-medium text-fg">Nota del cliente:</span> {turno.notas_cliente}</p>}
+            {turno.motivo_cancelacion && <p><span className="font-medium text-fg">Motivo de cancelación:</span> {turno.motivo_cancelacion}</p>}
+            {turno.reasignado_desde && (
+              <p className="flex items-start gap-1.5">
+                <RotateCcw className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                <span>
+                  Reasignado desde el {fmt(parseHoraNegocio(turno.reasignado_desde), "d MMM, HH:mm")}
+                  {turno.motivo_reasignacion && ` · ${turno.motivo_reasignacion}`}
+                </span>
+              </p>
+            )}
+          </div>
+        )}
 
-      <div className="space-y-2">
-        <label htmlFor="notas-profesional" className="text-sm font-medium">Notas internas</label>
-        <textarea
-          id="notas-profesional"
-          value={notas}
-          onChange={(e) => setNotas(e.target.value)}
-          maxLength={1000}
-          rows={3}
-          className="w-full rounded-md border border-gray-300 bg-white p-2 text-sm dark:border-gray-600 dark:bg-gray-800"
-          placeholder="Solo las ves vos"
-        />
-        <Button
-          size="sm"
-          variant="secondary"
-          loading={saving === 'notas'}
-          disabled={saving !== null || notas === (turno.notas_profesional ?? '')}
-          onClick={guardarNotas}
-        >
-          Guardar notas
-        </Button>
+        {acciones.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {acciones.map((destino) => (
+              <Button
+                key={destino}
+                size="sm"
+                variant={destino === 'NO_ASISTIO' ? 'outline' : 'primary'}
+                loading={saving === destino}
+                disabled={saving !== null}
+                onClick={() => cambiarEstado(destino)}
+              >
+                {ACCION_LABEL[destino]}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {(puedeReasignar || puedeCancelar) && (
+          <div className="flex flex-wrap gap-2">
+            {puedeReasignar && (
+              <Button size="sm" variant="outline" disabled={saving !== null} onClick={() => setDialogo('reasignar')}>
+                <CalendarClock /> Reasignar
+              </Button>
+            )}
+            {puedeCancelar && (
+              <Button size="sm" variant="ghost" className="text-danger hover:text-danger" disabled={saving !== null} onClick={() => setDialogo('cancelar')}>
+                <XCircle /> Cancelar turno
+              </Button>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-2 border-t border-line pt-5">
+          <Textarea
+            id={`notas-${turno.id}`}
+            label="Notas internas"
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+            maxLength={1000}
+            rows={3}
+            placeholder="Solo las ves vos"
+          />
+          <Button
+            size="sm"
+            variant="secondary"
+            loading={saving === 'notas'}
+            disabled={saving !== null || notas === (turno.notas_profesional ?? '')}
+            onClick={guardarNotas}
+          >
+            Guardar notas
+          </Button>
+        </div>
+
+        {error && <Alerta tipo="error">{error}</Alerta>}
       </div>
-
-      {error && (
-        <div className="flex items-center gap-2 rounded bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">
-          <AlertCircle className="h-4 w-4" /> {error}
-        </div>
-      )}
 
       <CancelarDialog
         open={dialogo === 'cancelar'}
@@ -182,6 +190,15 @@ export function TurnoDetallePanel({ turno, onClose, onUpdated }: TurnoDetallePan
           }}
         />
       )}
+    </div>
+  );
+}
+
+function Fila({ icon: Icon, valor }: { icon: typeof Phone; valor: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <Icon className="size-4 shrink-0 text-subtle" aria-hidden="true" />
+      <dd className="min-w-0 truncate text-fg">{valor}</dd>
     </div>
   );
 }

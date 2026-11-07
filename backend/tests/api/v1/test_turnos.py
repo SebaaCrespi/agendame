@@ -20,9 +20,21 @@ def _reserva(profesional_id: int, servicio_id: int, dias: int = 1, hora: str = "
 
 
 class TestDisponibilidad:
-    async def test_requiere_auth(self, async_client: AsyncClient):
+    async def test_visitante_sin_login(self, async_client: AsyncClient, sample_profesional, sample_servicio):
+        """RF-TURNO-01: la disponibilidad es pública, para poder elegir horario antes de registrarse."""
         dia = proximo_dia_habil(1).isoformat()
-        response = await async_client.get(f"{BASE}/disponibilidad", params={"desde": dia, "hasta": dia})
+        response = await async_client.get(
+            f"{BASE}/disponibilidad",
+            params={"desde": dia, "hasta": dia, "profesional_id": sample_profesional.id, "servicio_id": sample_servicio.id},
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["profesionales"][0]["profesional_id"] == sample_profesional.id
+
+    async def test_token_invalido_401(self, async_client: AsyncClient):
+        dia = proximo_dia_habil(1).isoformat()
+        response = await async_client.get(
+            f"{BASE}/disponibilidad", params={"desde": dia, "hasta": dia}, headers={"Authorization": "Bearer basura"}
+        )
         assert response.status_code == 401
 
     async def test_por_profesional(self, async_client, auth_headers, sample_profesional, sample_servicio):
@@ -41,12 +53,12 @@ class TestDisponibilidad:
         response = await async_client.get(f"{BASE}/disponibilidad", headers=auth_headers)
         assert response.status_code == 422
 
-    async def test_proveedor_no_puede_403(self, async_client, proveedor_headers):
+    async def test_proveedor_tambien_puede_consultar(self, async_client, proveedor_headers):
         dia = proximo_dia_habil(1).isoformat()
         response = await async_client.get(
             f"{BASE}/disponibilidad", params={"desde": dia, "hasta": dia}, headers=proveedor_headers
         )
-        assert response.status_code == 403
+        assert response.status_code == 200
 
 
 class TestCrearReserva:

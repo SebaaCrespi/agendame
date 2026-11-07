@@ -1,31 +1,32 @@
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { AlertCircle, CheckCircle2, Info, TriangleAlert } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
+type TipoAlerta = 'error' | 'ok' | 'info' | 'aviso';
+
 interface AlertaProps {
-  tipo: 'error' | 'ok';
-  children: React.ReactNode;
+  tipo: TipoAlerta;
+  children: ReactNode;
   className?: string;
 }
 
-/** Aviso de error o de éxito en línea. */
+const estilos: Record<TipoAlerta, { clase: string; Icono: typeof Info }> = {
+  error: { clase: 'bg-danger-soft text-danger', Icono: AlertCircle },
+  ok: { clase: 'bg-success-soft text-success', Icono: CheckCircle2 },
+  info: { clase: 'bg-info-soft text-info', Icono: Info },
+  aviso: { clase: 'bg-warning-soft text-warning', Icono: TriangleAlert },
+};
+
+/** Aviso en línea. */
 export function Alerta({ tipo, children, className }: AlertaProps) {
-  const Icono = tipo === 'error' ? AlertCircle : CheckCircle;
+  const { clase, Icono } = estilos[tipo];
   return (
     <div
       role={tipo === 'error' ? 'alert' : 'status'}
-      className={cn(
-        'flex items-start gap-2 rounded-lg p-3 text-sm',
-        tipo === 'error'
-          ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-          : 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-        className
-      )}
+      className={cn('flex items-start gap-2.5 rounded-lg px-3.5 py-3 text-[13px] font-medium', clase, className)}
     >
-      <Icono className="mt-0.5 h-4 w-4 shrink-0" /> <span>{children}</span>
+      <Icono className="mt-px size-4 shrink-0" aria-hidden="true" />
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }
-
-/** Clases de los inputs nativos (select, time, date) para que combinen con `Input`. */
-export const inputClass =
-  'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100';

@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agendame · Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F8FAFC;--surface:#FFFFFF;--surface-2:#F1F5F9;--line:#E2E8F0;--text:#0F172A;--muted:#64748B;
+  --primary:#1D4ED8;--primary-hover:#1E40AF;--primary-soft:#EFF6FF;--on-primary:#fff;
+  --success:#047857;--success-soft:#ECFDF5;--warning:#B45309;--warning-soft:#FFFBEB;--danger:#B91C1C;--danger-soft:#FEF2F2;
+  --info:#1D4ED8;--info-soft:#EFF6FF;
+}
+[data-theme=dark]{
+  --bg:#0B1120;--surface:#111827;--surface-2:#1F2937;--line:#1F2A3C;--text:#E5E7EB;--muted:#94A3B8;
+  --primary:#3B82F6;--primary-hover:#60A5FA;--primary-soft:rgba(59,130,246,.14);--on-primary:#fff;
+  --success:#34D399;--success-soft:rgba(52,211,153,.12);--warning:#FBBF24;--warning-soft:rgba(251,191,36,.12);
+  --danger:#F87171;--danger-soft:rgba(248,113,113,.12);--info:#60A5FA;--info-soft:rgba(96,165,250,.12);
+}
+*{box-sizing:border-box;margin:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+button{font:inherit;cursor:pointer}
+.top{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:8px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--muted);padding:6px 12px;border-radius:6px;font-weight:500}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:calc(100vh - 57px)}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;padding:4px 8px 16px}
+.logo{width:28px;height:28px;border-radius:8px;background:var(--primary);display:grid;place-items:center;color:#fff}
+.nav{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--muted);font-weight:500;text-decoration:none}
+.nav:hover{background:var(--surface-2);color:var(--text)}
+.nav.on{background:var(--primary-soft);color:var(--primary)}
+.nav svg{width:18px;height:18px}
+.navlabel{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:14px 10px 4px}
+.user{margin-top:auto;border-top:1px solid var(--line);padding-top:12px;display:flex;gap:10px;align-items:center}
+.av{width:32px;height:32px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-weight:600;font-size:12px;color:var(--muted)}
+main{padding:28px 32px;max-width:1120px;width:100%}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--muted);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:8px;border:1px solid transparent;font-weight:500}
+.btn-p{background:var(--primary);color:var(--on-primary)}.btn-p:hover{background:var(--primary-hover)}
+.btn-o{background:var(--surface);border-color:var(--line);color:var(--text)}.btn-o:hover{background:var(--surface-2)}
+.btn-sm{height:32px;padding:0 10px;font-size:13px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:2px 8px;border-radius:999px}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-ok{background:var(--success-soft);color:var(--success)}.b-pend{background:var(--warning-soft);color:var(--warning)}
+.b-cur{background:var(--info-soft);color:var(--info)}.b-fin{background:var(--surface-2);color:var(--muted)}.b-can{background:var(--danger-soft);color:var(--danger)}
+/* stepper */
+.steps{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:500}
+.step .n{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:12px}
+.step.done .n{background:var(--primary);border-color:var(--primary);color:#fff}
+.step.cur{color:var(--text)}.step.cur .n{border-color:var(--primary);color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.step+.step::before{content:"";width:28px;height:1px;background:var(--line);margin-right:8px}
+.wiz{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:16px;border-bottom:1px solid var(--line)}
+.day{border:1px solid var(--line);border-radius:10px;padding:10px 4px;text-align:center;background:var(--surface)}
+.day small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}
+.day b{font-size:18px;font-weight:600}
+.day.sel{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}.day.sel small{color:var(--primary)}
+.day.off{opacity:.4}
+.slots{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.slot{height:38px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-weight:500}
+.slot:hover{border-color:var(--primary);color:var(--primary)}
+.slot.sel{background:var(--primary);border-color:var(--primary);color:#fff}
+.slot:disabled{color:var(--muted);background:var(--surface-2);text-decoration:line-through;cursor:not-allowed;border-color:transparent}
+.sum{padding:20px}.sum h3{font-size:14px;font-weight:600;margin-bottom:12px}
+.row{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);gap:12px}
+.row span:first-child{color:var(--muted)}
+.sec{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+/* hoy */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{padding:16px}.kpi small{color:var(--muted)}.kpi b{display:block;font-size:24px;font-weight:600;margin-top:2px}
+.tl{padding:8px 0}
+.it{display:grid;grid-template-columns:72px 1fr auto;gap:16px;align-items:center;padding:14px 20px;border-left:3px solid transparent}
+.it+.it{border-top:1px solid var(--line)}
+.it .h{font-variant-numeric:tabular-nums;font-weight:600}.it .h small{display:block;color:var(--muted);font-weight:400}
+.it.cur{border-left-color:var(--primary);background:var(--primary-soft)}
+.it.past{opacity:.6}
+.now{display:flex;align-items:center;gap:8px;padding:0 20px;color:var(--danger);font-size:12px;font-weight:600}
+.now::after{content:"";flex:1;height:1px;background:var(--danger)}
+.acts{display:flex;gap:6px}
+/* admin */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:500;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+td{padding:12px 16px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+.bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;display:flex}
+.screen{display:none}.screen.on{display:block}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}.side{display:none}
+  main{padding:20px 16px 88px}
+  .wiz{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}
+  .days{grid-template-columns:repeat(4,1fr)}
+  .it{grid-template-columns:56px 1fr}.it .acts{grid-column:2}
+  .mob{display:flex!important}
+  .hide-m{display:none}
+}
+.mob{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);justify-content:space-around;padding:8px 0 12px;z-index:4}
+.mob a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);text-decoration:none}
+.mob a.on{color:var(--primary)}.mob svg{width:20px;height:20px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="seg" role="group" aria-label="Pantalla">
+    <button aria-pressed="true" data-s="cli">Cliente · Reservar</button>
+    <button aria-pressed="false" data-s="pro">Profesional · Hoy</button>
+    <button aria-pressed="false" data-s="adm">Admin · Resumen</button>
+  </div>
+  <div class="seg" role="group" aria-label="Tema">
+    <button aria-pressed="true" data-t="light">Claro</button>
+    <button aria-pressed="false" data-t="dark">Oscuro</button>
+  </div>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M12 12v6M9 15h6"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-hist" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
+  <symbol id="i-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M3 3v18h18M8 16v-5M13 16V8M18 16v-3"/></symbol>
+</svg>
+
+<!-- CLIENTE -->
+<div class="screen on" id="cli">
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo"><svg width="16" height="16"><use href="#i-cal"/></svg></span>Agendame</div>
+    <a class="nav" href="#"><svg><use href="#i-home"/></svg>Inicio</a>
+    <a class="nav on" href="#"><svg><use href="#i-plus"/></svg>Reservar</a>
+    <a class="nav" href="#"><svg><use href="#i-cal"/></svg>Mis turnos</a>
+    <a class="nav" href="#"><svg><use href="#i-chat"/></svg>Asistente</a>
+    <div class="user"><span class="av">LG</span><div><b style="font-weight:500">Lucía Gómez</b><div class="sub" style="font-size:12px">Cliente</div></div></div>
+  </aside>
+  <main>
+    <div class="ph"><div><h1>Reservar turno</h1><p class="sub">Elegí día y horario con Dra. Paula Ríos.</p></div></div>
+    <div class="steps">
+      <div class="step done"><span class="n">✓</span>Profesional</div>
+      <div class="step done"><span class="n">✓</span>Servicio</div>
+      <div class="step cur"><span class="n">3</span>Fecha y hora</div>
+      <div class="step"><span class="n">4</span>Confirmar</div>
+    </div>
+    <div class="wiz">
+      <div class="card">
+        <div class="sec">Noviembre 2026 <span><button class="btn btn-o btn-sm">‹</button> <button class="btn btn-o btn-sm">›</button></span></div>
+        <div class="days">
+          <div class="day"><small>Lun</small><b>9</b></div>
+          <div class="day sel"><small>Mar</small><b>10</b></div>
+          <div class="day"><small>Mié</small><b>11</b></div>
+          <div class="day"><small>Jue</small><b>12</b></div>
+          <div class="day hide-m"><small>Vie</small><b>13</b></div>
+          <div class="day off hide-m"><small>Sáb</small><b>14</b></div>
+          <div class="day off hide-m"><small>Dom</small><b>15</b></div>
+        </div>
+        <div style="padding:16px 16px 0;color:var(--muted);font-size:12px;font-weight:500">MAÑANA</div>
+        <div class="slots">
+          <button class="slot" disabled>09:00</button><button class="slot">09:30</button><button class="slot" disabled>10:00</button>
+          <button class="slot sel">10:30</button><button class="slot">11:00</button><button class="slot">11:30</button>
+        </div>
+        <div style="padding:0 16px;color:var(--muted);font-size:12px;font-weight:500">TARDE</div>
+        <div class="slots">
+          <button class="slot">14:00</button><button class="slot" disabled>14:30</button><button class="slot">15:00</button>
+          <button class="slot">15:30</button><button class="slot">16:00</button><button class="slot" disabled>16:30</button>
+        </div>
+      </div>
+      <div class="card sum">
+        <h3>Tu reserva</h3>
+        <div class="row"><span>Profesional</span><span>Dra. Paula Ríos</span></div>
+        <div class="row"><span>Servicio</span><span>Consulta general</span></div>
+        <div class="row"><span>Duración</span><span>30 min</span></div>
+        <div class="row"><span>Fecha</span><span>Mar 10 nov · 10:30</span></div>
+        <div class="row"><span>Precio</span><b>$ 18.000</b></div>
+        <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:16px">Continuar</button>
+        <p class="sub" style="font-size:12px;margin-top:10px">Podés cancelar sin cargo hasta 2 h antes.</p>
+      </div>
+    </div>
+  </main>
+</div>
+<nav class="mob"><a href="#"><svg><use href="#i-home"/></svg>Inicio</a><a class="on" href="#"><svg><use href="#i-plus"/></svg>Reservar</a><a href="#"><svg><use href="#i-cal"/></svg>Turnos</a><a href="#"><svg><use href="#i-chat"/></svg>Asistente</a></nav>
+</div>
+
+<!-- PROFESIONAL -->
+<div class="screen" id="pro">
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo"><svg width="16" height="16"><use href="#i-cal"/></svg></span>Agendame</div>
+    <a class="nav on" href="#"><svg><use href="#i-clock"/></svg>Hoy</a>
+    <a class="nav" href="#"><svg><use href="#i-cal"/></svg>Agenda</a>
+    <a class="nav" href="#"><svg><use href="#i-hist"/></svg>Historial</a>
+    <div class="navlabel">Configuración</div>
+    <a class="nav" href="#"><svg><use href="#i-cog"/></svg>Servicios</a>
+    <a class="nav" href="#"><svg><use href="#i-cal"/></svg>Disponibilidad</a>
+    <a class="nav" href="#"><svg><use href="#i-users"/></svg>Perfil</a>
+    <div class="user"><span class="av">PR</span><div><b style="font-weight:500">Paula Ríos</b><div class="sub" style="font-size:12px">Profesional</div></div></div>
+  </aside>
+  <main>
+    <div class="ph"><div><h1>Hoy</h1><p class="sub">Martes 10 de noviembre · 7 turnos</p></div><button class="btn btn-o">Ver agenda semanal</button></div>
+    <div class="kpis">
+      <div class="card kpi"><small>Turnos hoy</small><b>7</b></div>
+      <div class="card kpi"><small>Atendidos</small><b>2</b></div>
+      <div class="card kpi"><small>Por confirmar</small><b>1</b></div>
+      <div class="card kpi"><small>Próximo libre</small><b>12:00</b></div>
+    </div>
+    <div class="card tl">
+      <div class="it past"><div class="h">09:00<small>30 min</small></div><div><b style="font-weight:500">Martín Sosa</b><div class="sub">Consulta general</div></div><span class="badge b-fin">Finalizado</span></div>
+      <div class="it past"><div class="h">09:30<small>30 min</small></div><div><b style="font-weight:500">Ana Pereyra</b><div class="sub">Control</div></div><span class="badge b-fin">Finalizado</span></div>
+      <div class="it cur"><div class="h">10:00<small>45 min</small></div><div><b style="font-weight:500">Jorge Medina</b><div class="sub">Primera consulta</div></div><div class="acts"><span class="badge b-cur">En curso</span><button class="btn btn-p btn-sm">Finalizar</button></div></div>
+      <div class="now">10:22</div>
+      <div class="it"><div class="h">10:30<small>30 min</small></div><div><b style="font-weight:500">Lucía Gómez</b><div class="sub">Consulta general</div></div><div class="acts"><span class="badge b-ok">Confirmado</span><button class="btn btn-o btn-sm">Iniciar</button><button class="btn btn-o btn-sm">Ausente</button></div></div>
+      <div class="it"><div class="h">11:00<small>30 min</small></div><div><b style="font-weight:500">Carla Núñez</b><div class="sub">Control</div></div><div class="acts"><span class="badge b-pend">Pendiente</span><button class="btn btn-o btn-sm">Confirmar</button></div></div>
+      <div class="it"><div class="h">11:30<small>30 min</small></div><div><b style="font-weight:500">Diego Ruiz</b><div class="sub">Consulta general</div></div><span class="badge b-can">Cancelado por cliente</span></div>
+    </div>
+  </main>
+</div>
+<nav class="mob"><a class="on" href="#"><svg><use href="#i-clock"/></svg>Hoy</a><a href="#"><svg><use href="#i-cal"/></svg>Agenda</a><a href="#"><svg><use href="#i-hist"/></svg>Historial</a><a href="#"><svg><use href="#i-cog"/></svg>Ajustes</a></nav>
+</div>
+
+<!-- ADMIN -->
+<div class="screen" id="adm">
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo"><svg width="16" height="16"><use href="#i-cal"/></svg></span>Agendame</div>
+    <a class="nav on" href="#"><svg><use href="#i-chart"/></svg>Resumen</a>
+    <a class="nav" href="#"><svg><use href="#i-cal"/></svg>Turnos</a>
+    <a class="nav" href="#"><svg><use href="#i-users"/></svg>Profesionales</a>
+    <div class="user"><span class="av">AD</span><div><b style="font-weight:500">Admin</b><div class="sub" style="font-size:12px">Administrador</div></div></div>
+  </aside>
+  <main>
+    <div class="ph"><div><h1>Resumen</h1><p class="sub">Estado del centro hoy.</p></div><button class="btn btn-p">Nuevo profesional</button></div>
+    <div class="kpis">
+      <div class="card kpi"><small>Profesionales activos</small><b>12</b></div>
+      <div class="card kpi"><small>Inactivos</small><b>2</b></div>
+      <div class="card kpi"><small>Turnos hoy</small><b>48</b></div>
+      <div class="card kpi"><small>Cancelaciones hoy</small><b>3</b></div>
+    </div>
+    <div class="card" style="margin-bottom:20px;padding:16px 20px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><b style="font-weight:600">Turnos de hoy por estado</b><span class="sub">48 total</span></div>
+      <div class="bar"><span style="width:25%;background:var(--muted)"></span><span style="width:8%;background:var(--info)"></span><span style="width:52%;background:var(--success)"></span><span style="width:9%;background:var(--warning)"></span><span style="width:6%;background:var(--danger)"></span></div>
+      <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap"><span class="badge b-fin">Finalizados 12</span><span class="badge b-cur">En curso 4</span><span class="badge b-ok">Confirmados 25</span><span class="badge b-pend">Pendientes 4</span><span class="badge b-can">Cancelados 3</span></div>
+    </div>
+    <div class="card" style="overflow:auto">
+      <div class="sec">Próximos turnos <a href="#" style="color:var(--primary);font-weight:500;text-decoration:none;font-size:13px">Ver todos</a></div>
+      <table>
+        <thead><tr><th>Hora</th><th>Cliente</th><th>Profesional</th><th>Servicio</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>10:30</td><td>Lucía Gómez</td><td>Paula Ríos</td><td>Consulta general</td><td><span class="badge b-ok">Confirmado</span></td></tr>
+          <tr><td>10:30</td><td>Raúl Ibáñez</td><td>Juan Ferrari</td><td>Corte</td><td><span class="badge b-ok">Confirmado</span></td></tr>
+          <tr><td>11:00</td><td>Carla Núñez</td><td>Paula Ríos</td><td>Control</td><td><span class="badge b-pend">Pendiente</span></td></tr>
+          <tr><td>11:15</td><td>Sofía Vera</td><td>Marta Luna</td><td>Kinesiología</td><td><span class="badge b-ok">Confirmado</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<nav class="mob"><a class="on" href="#"><svg><use href="#i-chart"/></svg>Resumen</a><a href="#"><svg><use href="#i-cal"/></svg>Turnos</a><a href="#"><svg><use href="#i-users"/></svg>Profesionales</a></nav>
+</div>
+
+<script>
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-s]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===b.dataset.s));
+});
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-t]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  document.documentElement.dataset.theme=b.dataset.t;
+});
+document.querySelectorAll('.slot:not(:disabled)').forEach(s=>s.onclick=()=>{
+  document.querySelectorAll('.slot').forEach(x=>x.classList.remove('sel'));s.classList.add('sel');
+});
+</script>
+</body>
+</html>

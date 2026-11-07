@@ -1,31 +1,31 @@
 import { useCallback, useEffect, useState } from 'react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { AlertCircle } from 'lucide-react';
+import { History, Search } from 'lucide-react';
 import { api } from '@/services/api';
+import { Card } from '@/components/ui/Card';
+import { Input, Select } from '@/components/ui/Input';
 import { Paginacion } from '@/components/ui/Paginacion';
+import { Alerta } from '@/components/ui/Alerta';
+import { EmptyState, PageHeader, Segmented, Spinner } from '@/components/ui/misc';
 import { TurnoDetallePanel } from '@/components/turnos/TurnoDetallePanel';
-import { ESTADO_COLOR, ESTADO_LABEL, GRUPOS_ESTADO, estadosDelGrupo, type GrupoEstado } from '@/components/turnos/estado';
+import { Badge, EstadoBadge } from '@/components/turnos/EstadoBadge';
+import { GRUPOS_ESTADO, estadosDelGrupo, type GrupoEstado } from '@/components/turnos/estado';
 import { cn } from '@/utils/cn';
+import { capitalizar, fmt, plural } from '@/utils/formato';
 import { formatHora, parseHoraNegocio } from '@/utils/horaNegocio';
 import type { MomentoTurno, Servicio, Turno } from '@/types';
 
 const POR_PAGINA = 20;
 
-const inputClass =
-  'rounded-md border border-gray-300 bg-white p-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100';
-
 /** Pasado y todavía pendiente o confirmado: nadie lo marcó finalizado ni ausente. */
 function sinCerrar(turno: Turno, ahora: Date): boolean {
-  return (
-    (turno.estado === 'PENDIENTE' || turno.estado === 'CONFIRMADO') &&
-    parseHoraNegocio(turno.fecha_fin) <= ahora
-  );
+  return (turno.estado === 'PENDIENTE' || turno.estado === 'CONFIRMADO') && parseHoraNegocio(turno.fecha_fin) <= ahora;
 }
 
-/** Historial del proveedor (CU-09): turnos de cualquier rango, paginados. */
+type Momento = MomentoTurno | 'todos';
+
+/** CU-09: historial del proveedor, cualquier rango, paginado. */
 export function ProfesionalHistorialPage() {
-  const [momento, setMomento] = useState<MomentoTurno | ''>('pasados');
+  const [momento, setMomento] = useState<Momento>('pasados');
   const [grupo, setGrupo] = useState<GrupoEstado>('todos');
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
@@ -61,7 +61,7 @@ export function ProfesionalHistorialPage() {
     setError(null);
     try {
       const data = await api.getMisTurnosProfesional({
-        ...(momento && { momento }),
+        ...(momento !== 'todos' && { momento }),
         estado: estadosDelGrupo(grupo),
         ...(desde && { desde }),
         ...(hasta && { hasta }),
@@ -96,125 +96,99 @@ export function ProfesionalHistorialPage() {
     setTurnos((prev) => prev.map((t) => (t.id === actualizado.id ? actualizado : t)));
     setSelected(actualizado);
     // Cambió de estado o de fecha: puede haber salido de los filtros
-    if (anterior && (anterior.estado !== actualizado.estado || anterior.fecha_inicio !== actualizado.fecha_inicio)) {
-      void cargar();
-    }
+    if (anterior && (anterior.estado !== actualizado.estado || anterior.fecha_inicio !== actualizado.fecha_inicio)) void cargar();
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Historial</h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">Todos tus turnos, de cualquier fecha</p>
-      </div>
+    <>
+      <PageHeader title="Historial" description="Todos tus turnos, de cualquier fecha." />
 
-      {/* Filtros */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <select aria-label="Momento" value={momento} onChange={(e) => filtrar(setMomento)(e.target.value as MomentoTurno | '')} className={inputClass}>
-          <option value="pasados">Pasados</option>
-          <option value="proximos">Próximos</option>
-          <option value="">Todos</option>
-        </select>
-        <select aria-label="Filtrar por estado" value={grupo} onChange={(e) => filtrar(setGrupo)(e.target.value as GrupoEstado)} className={inputClass}>
-          {(Object.keys(GRUPOS_ESTADO) as GrupoEstado[]).map((g) => (
-            <option key={g} value={g}>{g === 'todos' ? 'Todos los estados' : GRUPOS_ESTADO[g].label}</option>
-          ))}
-        </select>
-        <select
-          aria-label="Filtrar por servicio"
-          value={servicioId}
-          onChange={(e) => filtrar(setServicioId)(e.target.value ? Number(e.target.value) : '')}
-          className={inputClass}
-        >
-          <option value="">Todos los servicios</option>
-          {servicios.map((s) => (
-            <option key={s.id} value={s.id}>{s.nombre}</option>
-          ))}
-        </select>
-        <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          Desde
-          <input type="date" value={desde} max={hasta || undefined} onChange={(e) => filtrar(setDesde)(e.target.value)} className={cn(inputClass, 'flex-1')} />
-        </label>
-        <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          Hasta
-          <input type="date" value={hasta} min={desde || undefined} onChange={(e) => filtrar(setHasta)(e.target.value)} className={cn(inputClass, 'flex-1')} />
-        </label>
-        <input
-          type="search"
-          aria-label="Buscar cliente"
-          placeholder="Buscar cliente…"
-          value={cliente}
-          onChange={(e) => setCliente(e.target.value)}
-          className={inputClass}
+      <div className="mb-4 space-y-3">
+        <Segmented
+          label="Momento"
+          value={momento}
+          onChange={filtrar(setMomento)}
+          options={[
+            { value: 'pasados', label: 'Pasados' },
+            { value: 'proximos', label: 'Próximos' },
+            { value: 'todos', label: 'Todos' },
+          ]}
         />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <Input type="search" aria-label="Buscar cliente" placeholder="Buscar cliente…" leftIcon={<Search />} value={cliente} onChange={(e) => setCliente(e.target.value)} wrapperClassName="lg:col-span-1" />
+          <Select aria-label="Filtrar por estado" value={grupo} onChange={(e) => filtrar(setGrupo)(e.target.value as GrupoEstado)}>
+            {(Object.keys(GRUPOS_ESTADO) as GrupoEstado[]).map((g) => (
+              <option key={g} value={g}>{g === 'todos' ? 'Todos los estados' : GRUPOS_ESTADO[g].label}</option>
+            ))}
+          </Select>
+          <Select aria-label="Filtrar por servicio" value={servicioId} onChange={(e) => filtrar(setServicioId)(e.target.value ? Number(e.target.value) : '')}>
+            <option value="">Todos los servicios</option>
+            {servicios.map((s) => (
+              <option key={s.id} value={s.id}>{s.nombre}</option>
+            ))}
+          </Select>
+          <Input type="date" aria-label="Desde" title="Desde" value={desde} max={hasta || undefined} onChange={(e) => filtrar(setDesde)(e.target.value)} />
+          <Input type="date" aria-label="Hasta" title="Hasta" value={hasta} min={desde || undefined} onChange={(e) => filtrar(setHasta)(e.target.value)} />
+        </div>
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-300">
-          <AlertCircle className="h-4 w-4" /> {error}
-        </div>
-      )}
+      {error && <Alerta tipo="error" className="mb-4">{error}</Alerta>}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className={cn('min-w-0 transition-opacity', loading && 'opacity-50')}>
-          <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">{total} {total === 1 ? 'turno' : 'turnos'}</p>
-          {!loading && turnos.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-700">
-              No hay turnos con estos filtros.
-            </p>
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
+        <Card padding="none" className="min-w-0 overflow-hidden">
+          {loading && turnos.length === 0 ? (
+            <Spinner />
+          ) : turnos.length === 0 ? (
+            <EmptyState icon={History} title="Sin turnos" description="No hay turnos con estos filtros." />
           ) : (
-            <ul className="divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 bg-white dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-900">
-              {turnos.map((turno) => {
-                const pendienteDeCierre = sinCerrar(turno, ahora);
-                return (
-                  <li key={turno.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelected(turno)}
-                      aria-current={selected?.id === turno.id}
-                      className={cn(
-                        'flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800',
-                        selected?.id === turno.id && 'bg-indigo-50 dark:bg-indigo-900/20'
-                      )}
-                    >
-                      <span className="w-28 shrink-0 font-medium capitalize text-gray-900 dark:text-white">
-                        {format(parseHoraNegocio(turno.fecha_inicio), 'EEE d MMM', { locale: es })}
-                      </span>
-                      <span className="w-24 shrink-0 text-gray-500 dark:text-gray-400">
-                        {formatHora(turno.fecha_inicio)} – {formatHora(turno.fecha_fin)}
-                      </span>
-                      <span className="w-full min-w-0 truncate text-gray-900 sm:w-auto sm:flex-1 dark:text-gray-100">
-                        {turno.cliente_nombre} · <span className="text-gray-500 dark:text-gray-400">{turno.servicio_nombre}</span>
-                      </span>
-                      <span className="flex shrink-0 gap-1">
-                        {pendienteDeCierre && (
-                          <span className="rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
-                            Sin cerrar
-                          </span>
+            <div className={cn('transition-opacity', loading && 'opacity-50')}>
+              <p className="border-b border-line px-5 py-3 text-[13px] text-muted">{plural(total, 'turno')}</p>
+              <ul className="divide-y divide-line">
+                {turnos.map((t) => {
+                  const inicio = parseHoraNegocio(t.fecha_inicio);
+                  return (
+                    <li key={t.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelected(t)}
+                        aria-current={selected?.id === t.id}
+                        className={cn(
+                          'flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 px-5 py-3.5 text-left transition-colors hover:bg-surface-2',
+                          selected?.id === t.id && 'bg-primary-soft hover:bg-primary-soft'
                         )}
-                        <span className={cn('rounded border px-2 py-0.5 text-xs font-medium', ESTADO_COLOR[turno.estado])}>
-                          {ESTADO_LABEL[turno.estado]}
+                      >
+                        <span className="w-24 shrink-0">
+                          <span className="block text-[13px] font-medium text-fg">{capitalizar(fmt(inicio, 'EEE d MMM'))}</span>
+                          <span className="block text-xs text-muted tabular">{formatHora(t.fecha_inicio)} – {formatHora(t.fecha_fin)}</span>
                         </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium text-fg">{t.cliente_nombre}</span>
+                          <span className="block truncate text-[13px] text-muted">{t.servicio_nombre}</span>
+                        </span>
+                        <span className="flex shrink-0 gap-1.5 max-sm:w-full max-sm:pl-28">
+                          {sinCerrar(t, ahora) && <Badge className="bg-warning-soft text-warning">Sin cerrar</Badge>}
+                          <EstadoBadge estado={t.estado} />
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <Paginacion page={page} pages={pages} onChange={setPage} />
+            </div>
           )}
-          <Paginacion page={page} pages={pages} onChange={setPage} />
-        </div>
+        </Card>
 
         <div>
           {selected ? (
             <TurnoDetallePanel key={selected.id} turno={selected} onClose={() => setSelected(null)} onUpdated={onUpdated} />
           ) : (
-            <p className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-gray-700">
-              Elegí un turno para ver el detalle
-            </p>
+            <div className="rounded-xl border border-dashed border-line-strong px-6 py-10 text-center text-[13px] text-muted max-lg:hidden">
+              Elegí un turno para ver el detalle.
+            </div>
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
