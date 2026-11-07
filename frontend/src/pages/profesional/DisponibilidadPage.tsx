@@ -1,3 +1,4 @@
+import { DateField } from '@/components/ui/DateField';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { format, parseISO } from 'date-fns';
 import { CalendarOff, Trash2 } from 'lucide-react';
@@ -206,7 +207,7 @@ export function ProfesionalDisponibilidadPage() {
         <form onSubmit={agregarExcepcion} className="space-y-3 border-t border-line bg-canvas/50 px-5 py-4">
           <p className="text-[13px] font-medium text-fg">Agregar excepción</p>
           <div className="grid grid-cols-2 gap-2">
-            <Input type="date" aria-label="Fecha" min={hoy} value={nueva.fecha} onChange={(e) => setNueva({ ...nueva, fecha: e.target.value })} required />
+            <DateField aria-label="Fecha" min={hoy} value={nueva.fecha} onChange={(v) => setNueva({ ...nueva, fecha: v })} required />
             <Select aria-label="Tipo" value={nueva.tipo} onChange={(e) => setNueva({ ...nueva, tipo: e.target.value as ExcepcionCreate['tipo'] })}>
               <option value="CERRADO">Cerrado</option>
               <option value="HORARIO_ESPECIAL">Horario especial</option>

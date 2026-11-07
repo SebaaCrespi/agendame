@@ -1,10 +1,11 @@
+import { DateField } from '@/components/ui/DateField';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, CalendarPlus } from 'lucide-react';
 import { api } from '@/services/api';
 import { buttonClass } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Input, Select } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Input';
 import { Paginacion } from '@/components/ui/Paginacion';
 import { Alerta } from '@/components/ui/Alerta';
 import { EmptyState, PageHeader, Segmented, Spinner } from '@/components/ui/misc';
@@ -100,8 +101,8 @@ export function MisTurnosPage() {
               <option key={g} value={g}>{g === 'todos' ? 'Todos los estados' : GRUPOS_ESTADO[g].label}</option>
             ))}
           </Select>
-          <Input type="date" aria-label="Desde" title="Desde" value={desde} max={hasta || undefined} onChange={(e) => filtrar(setDesde)(e.target.value)} />
-          <Input type="date" aria-label="Hasta" title="Hasta" value={hasta} min={desde || undefined} onChange={(e) => filtrar(setHasta)(e.target.value)} />
+          <DateField aria-label="Desde" title="Desde" value={desde} max={hasta || undefined} onChange={filtrar(setDesde)} />
+          <DateField aria-label="Hasta" title="Hasta" value={hasta} min={desde || undefined} onChange={filtrar(setHasta)} />
         </div>
       </div>
 

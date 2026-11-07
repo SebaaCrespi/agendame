@@ -21,9 +21,6 @@ export function LandingPage() {
           <Brand />
           <nav className="flex items-center gap-1 sm:gap-2" aria-label="Cuenta">
             <ThemeSwitch />
-            <Link to="/reservar" className={buttonClass('ghost', 'md', 'hidden sm:inline-flex')}>
-              Reservar
-            </Link>
             <Link to="/login" className={buttonClass('ghost', 'md', 'hidden sm:inline-flex')}>
               Iniciar sesión
             </Link>
@@ -36,26 +33,20 @@ export function LandingPage() {
 
       <main>
         {/* Hero */}
-        <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-14 pt-8 sm:px-6 md:pb-24 md:pt-12 lg:grid-cols-[1.1fr_1fr]">
+        <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-14 pt-8 sm:px-6 md:pb-24 md:pt-12 lg:grid-cols-2 lg:gap-6">
           <div>
             <Badge className="bg-primary-soft text-primary" dot={false}>
               <Sparkles className="size-3.5" /> Con asistente virtual
             </Badge>
-            <h1 className="mt-5 text-4xl font-semibold leading-[1.1] tracking-tight text-fg sm:text-5xl">
+            <h1 className="mt-8 text-4xl font-semibold leading-[1.1] tracking-tight text-fg sm:text-5xl">
               Tus turnos, sin llamadas ni esperas.
             </h1>
-            <p className="mt-5 max-w-lg text-base leading-relaxed text-muted sm:text-lg">
-              Elegí profesional y horario sin registrarte. Creás tu cuenta solo al confirmar, y después gestionás tus turnos desde un solo lugar.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-12 flex flex-wrap gap-3">
               <Link to="/reservar" className={buttonClass('primary', 'lg')}>
                 Reservar un turno
               </Link>
-              <Link to="/login" className={buttonClass('outline', 'lg')}>
-                Ya tengo cuenta
-              </Link>
             </div>
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-muted">
+            <ul className="mt-12 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-muted">
               <li className="flex items-center gap-2"><ShieldCheck className="size-4 text-success" /> Cancelación hasta 2 h antes</li>
               <li className="flex items-center gap-2"><Bell className="size-4 text-success" /> Disponibilidad en tiempo real</li>
             </ul>

@@ -1,3 +1,4 @@
+import { DateField } from '@/components/ui/DateField';
 import { useCallback, useEffect, useState } from 'react';
 import { History, Search } from 'lucide-react';
 import { api } from '@/services/api';
@@ -127,8 +128,8 @@ export function ProfesionalHistorialPage() {
               <option key={s.id} value={s.id}>{s.nombre}</option>
             ))}
           </Select>
-          <Input type="date" aria-label="Desde" title="Desde" value={desde} max={hasta || undefined} onChange={(e) => filtrar(setDesde)(e.target.value)} />
-          <Input type="date" aria-label="Hasta" title="Hasta" value={hasta} min={desde || undefined} onChange={(e) => filtrar(setHasta)(e.target.value)} />
+          <DateField aria-label="Desde" title="Desde" value={desde} max={hasta || undefined} onChange={filtrar(setDesde)} />
+          <DateField aria-label="Hasta" title="Hasta" value={hasta} min={desde || undefined} onChange={filtrar(setHasta)} />
         </div>
       </div>
 

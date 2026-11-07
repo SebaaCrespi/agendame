@@ -100,7 +100,7 @@ export function ChatWidget() {
             'fixed z-40 flex flex-col overflow-hidden border border-line bg-surface shadow-pop',
             // Mobile: casi pantalla completa, por encima de la barra inferior
             'inset-x-2 bottom-[5.5rem] top-16 rounded-2xl',
-            'md:inset-auto md:bottom-24 md:right-6 md:h-[min(600px,calc(100vh-8rem))] md:w-[380px]'
+            'md:inset-auto md:bottom-28 md:right-6 md:h-[min(600px,calc(100vh-8rem))] md:w-[380px]'
           )}
         >
           <header className="flex items-center gap-3 border-b border-line px-4 py-3">
@@ -190,7 +190,7 @@ export function ChatWidget() {
         aria-label={abierto ? 'Cerrar asistente' : 'Abrir asistente'}
         aria-expanded={abierto}
         className={cn(
-          'fixed bottom-[5.5rem] right-4 z-40 flex size-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-pop transition-transform hover:scale-105 hover:bg-primary-hover focus-visible:ring-4 focus-visible:ring-ring md:bottom-6 md:right-6',
+          'fixed bottom-[6.5rem] right-4 z-40 flex size-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-pop transition-transform hover:scale-105 hover:bg-primary-hover focus-visible:ring-4 focus-visible:ring-ring md:bottom-10 md:right-6',
           abierto && 'max-md:hidden'
         )}
       >

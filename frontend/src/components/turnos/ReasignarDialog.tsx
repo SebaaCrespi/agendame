@@ -1,9 +1,10 @@
+import { DateField } from '@/components/ui/DateField';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { format } from 'date-fns';
 import { api } from '@/services/api';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
-import { Input, Textarea } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Input';
 import { Alerta } from '@/components/ui/Alerta';
 import { cn } from '@/utils/cn';
 import { parseHoraNegocio } from '@/utils/horaNegocio';
@@ -98,14 +99,13 @@ export function ReasignarDialog({ open, turno, onClose, onReasignado }: Reasigna
   return (
     <Dialog open={open} title="Reasignar turno" description={`${turno.cliente_nombre} · ${turno.servicio_nombre}`} onClose={cerrar}>
       <form onSubmit={onSubmit} className="space-y-4">
-        <Input
+        <DateField
           id="reasignar-fecha"
           label="Nueva fecha"
-          type="date"
           min={hoy}
           value={fecha}
-          onChange={(e) => {
-            setFecha(e.target.value);
+          onChange={(v) => {
+            setFecha(v);
             setHora(null);
           }}
           required

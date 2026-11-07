@@ -185,7 +185,7 @@ export function ReservarPage() {
           )}
 
           {paso === 2 && prof && (
-            <Card padding="none">
+            <Card padding="none" className="overflow-hidden">
               <CardSection title="Servicios" />
               {prof.servicios.length === 0 ? (
                 <EmptyState icon={Stethoscope} title="Sin servicios disponibles" description="Este profesional todavía no ofrece servicios para reservar." />
@@ -327,7 +327,7 @@ export function ReservarPage() {
 
 function Stepper({ paso, onIr }: { paso: Paso; onIr: (n: Paso) => void }) {
   return (
-    <ol className="mb-6 flex items-center gap-2 overflow-x-auto pb-1" aria-label="Pasos de la reserva">
+    <ol className="-mx-1.5 mb-4.5 flex items-center gap-2 overflow-x-auto p-1.5" aria-label="Pasos de la reserva">
       {PASOS.map(({ n, label }, i) => {
         const hecho = n < paso;
         const actual = n === paso;

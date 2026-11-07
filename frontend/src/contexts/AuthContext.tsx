@@ -10,6 +10,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (data: { email: string; password: string; nombre: string; rol: 'CLIENTE' | 'PROVEEDOR' }) => Promise<void>;
   logout: () => void;
+  /** true si el usuario cerró sesión a propósito (no por sesión vencida). */
+  cerroSesion: boolean;
   updateUser: (data: { nombre?: string; password?: string }) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -19,6 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [cerroSesion, setCerroSesion] = useState(false);
 
   const refreshUser = useCallback(async () => {
     if (!api.isAuthenticated()) {
@@ -44,16 +47,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const data = await api.login(email, password);
+    setCerroSesion(false);
     setUser(data.user);
   };
 
   const register = async (data: { email: string; password: string; nombre: string; rol: 'CLIENTE' | 'PROVEEDOR' }) => {
     const result = await api.register(data);
+    setCerroSesion(false);
     setUser(result.user);
   };
 
   const logout = () => {
     api.logout();
+    setCerroSesion(true);
     setUser(null);
   };
 
@@ -63,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, updateUser, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, cerroSesion, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

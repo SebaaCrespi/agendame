@@ -1,8 +1,9 @@
+import { DateField } from '@/components/ui/DateField';
 import { useCallback, useEffect, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 import { api } from '@/services/api';
 import { Card } from '@/components/ui/Card';
-import { Input, Select } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Input';
 import { Paginacion } from '@/components/ui/Paginacion';
 import { Alerta } from '@/components/ui/Alerta';
 import { EmptyState, PageHeader, Spinner } from '@/components/ui/misc';
@@ -85,8 +86,8 @@ export function AdminTurnosPage() {
             <option key={e} value={e}>{ESTADO_LABEL[e]}</option>
           ))}
         </Select>
-        <Input type="date" aria-label="Desde" title="Desde" value={desde} max={hasta || undefined} onChange={(e) => filtrar(setDesde)(e.target.value)} />
-        <Input type="date" aria-label="Hasta" title="Hasta" value={hasta} min={desde || undefined} onChange={(e) => filtrar(setHasta)(e.target.value)} />
+        <DateField aria-label="Desde" title="Desde" value={desde} max={hasta || undefined} onChange={filtrar(setDesde)} />
+        <DateField aria-label="Hasta" title="Hasta" value={hasta} min={desde || undefined} onChange={filtrar(setHasta)} />
       </div>
 
       {error && <Alerta tipo="error" className="mb-4">{error}</Alerta>}
